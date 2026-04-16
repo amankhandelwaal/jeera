@@ -1,0 +1,42 @@
+# --- Project Specific Exclusions ---
+application-dev.properties
+.env
+CONTEXT.md
+design-mockups/
+
+# --- Build and Binary Files ---
+target/
+*.class
+**/target/
+**/src/main/**/target/
+**/src/test/**/target/
+
+# --- IntelliJ IDEA ---
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# --- Maven Wrapper ---
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# --- OS Generated Files ---
+.DS_Store
+Thumbs.db
+
+# --- Other IDEs (Optional but good for team portability) ---
+# VS Code
+.vscode/
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+build/
+# STS / Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
