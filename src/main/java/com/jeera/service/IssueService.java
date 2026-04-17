@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -25,6 +26,15 @@ public class IssueService {
   private final UserRepository userRepository;
   private final ActivityLogService activityLogService;
   private final NotificationService notificationService;
+
+  public Issue findById(Long issueId) {
+    return issueRepository.findById(issueId)
+        .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
+  }
+
+  public List<Issue> findByProjectId(Long projectId) {
+    return issueRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
+  }
 
   public Issue createIssue(Issue newIssue, Long reporterId) {
     User reporter = userRepository.findById(reporterId)
