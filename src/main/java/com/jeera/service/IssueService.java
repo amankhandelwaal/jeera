@@ -188,7 +188,7 @@ public class IssueService {
       case RESOLVED -> valid = (newStatus == IssueStatus.UNDER_VERIFICATION);
       case UNDER_VERIFICATION -> valid = (newStatus == IssueStatus.CLOSED || newStatus == IssueStatus.OPEN);
       case MARK_REJECTED -> valid = (newStatus == IssueStatus.OPEN || newStatus == IssueStatus.REJECTED);
-      case REJECTED -> valid = (newStatus == IssueStatus.OPEN);
+      case REJECTED -> valid = false;
       default -> valid = false;
     }
 
