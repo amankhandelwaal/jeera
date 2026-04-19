@@ -26,11 +26,17 @@ public class Notification {
   @Column(nullable = false)
   private String message;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "issue_id", nullable = false)
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "issue_id")
   @ToString.Exclude
   @EqualsAndHashCode.Exclude
   private Issue issue;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "project_id")
+  @ToString.Exclude
+  @EqualsAndHashCode.Exclude
+  private Project project;
 
   @Builder.Default
   @Column(nullable = false)

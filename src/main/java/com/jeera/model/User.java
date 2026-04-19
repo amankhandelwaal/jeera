@@ -33,6 +33,14 @@ public class User {
   @Column(nullable = false)
   private UserRole systemRole;
 
+  @Builder.Default
+  @Column(nullable = false, columnDefinition = "boolean default false")
+  private boolean canCreateProject = false;
+
+  @Builder.Default
+  @Column(nullable = false, columnDefinition = "boolean default true")
+  private boolean isActive = true;
+
   @Column(nullable = false)
   private LocalDateTime createdAt;
 
