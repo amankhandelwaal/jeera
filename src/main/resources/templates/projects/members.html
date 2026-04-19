@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en"
+			xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Project Members', ~{::section})}">
+<section>
+	<div class="row g-4">
+		<div class="col-12 col-lg-5">
+			<div class="jeera-card p-4">
+				<h1 class="h5 mb-1" th:text="${canManageMembers ? 'Manage Members' : 'Project Members'}">Manage Members</h1>
+				<p class="jeera-muted mb-4" th:text="${canManageMembers ? ('Add users to ' + project.name + ' and assign their project role.') : ('You can view members of ' + project.name + '. Only the project owner or admin can manage changes.')}">
+					Project members information.
+				</p>
+
+				<form th:if="${canManageMembers}" th:action="@{/projects/{id}/members(id=${project.id})}" th:object="${addMemberDto}" method="post" novalidate>
+					<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+					<div class="mb-3">
+						<label for="username" class="form-label fw-semibold">Username</label>
+						<input id="username" type="text" class="form-control" th:field="*{username}" placeholder="Enter existing username">
+						<div class="invalid-feedback d-block" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username error</div>
+					</div>
+
+					<div class="mb-4">
+						<label for="projectRole" class="form-label fw-semibold">Project Role</label>
+						<select id="projectRole" class="form-select" th:field="*{projectRole}">
+							<option value="">Select role</option>
+							<option th:each="role : ${T(com.jeera.model.enums.ProjectRole).values()}"
+											th:value="${role}"
+											th:text="${role}">ROLE</option>
+						</select>
+						<div class="invalid-feedback d-block" th:if="${#fields.hasErrors('projectRole')}" th:errors="*{projectRole}">Role error</div>
+					</div>
+
+					<div class="d-flex flex-wrap gap-2">
+						<button type="submit" class="btn btn-primary">Add member</button>
+						<a class="btn btn-outline-secondary" th:href="@{/projects/{id}/issues(id=${project.id})}">Back to issues</a>
+					</div>
+				</form>
+
+				<div th:if="${!canManageMembers}" class="d-flex flex-wrap gap-2">
+					<a class="btn btn-outline-secondary" th:href="@{/projects/{id}/issues(id=${project.id})}">Back to issues</a>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-12 col-lg-7">
+			<div class="jeera-card p-4">
+				<div class="d-flex align-items-center justify-content-between mb-3">
+					<h2 class="jeera-section-title">Current Team</h2>
+					<span class="badge text-bg-light" th:text="${#lists.size(members) + ' members'}">0 members</span>
+				</div>
+
+				<div class="member-card mb-3">
+					<div class="d-flex align-items-start justify-content-between">
+						<div>
+							<div class="member-name" th:text="${project.owner.username}">owner</div>
+							<div class="member-meta" th:text="${project.owner.email}">owner@email</div>
+						</div>
+						<span class="badge badge-role-pm">PM (Owner)</span>
+					</div>
+				</div>
+
+				<div th:if="${#lists.isEmpty(members)}" class="text-center py-4 jeera-muted">
+					No project members added yet.
+				</div>
+
+				<div th:if="${!#lists.isEmpty(members)}">
+					<div th:each="member : ${members}" class="member-card">
+						<div class="d-flex align-items-start justify-content-between gap-3">
+							<div>
+								<div class="member-name" th:text="${member.user.username}">username</div>
+								<div class="member-meta" th:text="${member.user.email}">email</div>
+								<div class="member-meta"
+										 th:text="${'Added ' + #temporals.format(member.addedAt, 'dd MMM yyyy, HH:mm')}">Added at</div>
+							</div>
+							<span class="badge"
+										th:classappend="${member.projectRole.name() == 'DEVELOPER'} ? ' badge-role-dev' : ' badge-role-tester'"
+										th:text="${member.projectRole}">ROLE</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+</html>

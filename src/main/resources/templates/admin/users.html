@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Admin - Users', ~{::section})}">
+<section>
+  <div class="jeera-card p-4">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <h1 class="h4 mb-0">User Management</h1>
+      <a class="btn btn-primary btn-sm" th:href="@{/admin/users/new}">+ Create user</a>
+    </div>
+
+    <p class="small text-secondary mb-3">
+      Project creation is controlled separately from system role.
+    </p>
+
+    <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>System Role</th>
+          <th>Project Creation Permission</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(users)}">
+          <td colspan="8" class="text-center jeera-muted py-4">No users found.</td>
+        </tr>
+        <tr th:each="user : ${users}">
+          <td th:text="${user.id}">1</td>
+          <td class="fw-semibold" th:text="${user.username}">username</td>
+          <td th:text="${user.email}">email</td>
+          <td>
+            <span class="badge" th:classappend="${user.active} ? ' text-bg-success' : ' text-bg-secondary'"
+                  th:text="${user.active ? 'Active' : 'Inactive'}">Active</span>
+          </td>
+          <td>
+            <form th:action="@{'/admin/users/' + ${user.id} + '/role'}" method="post" class="d-flex gap-2 align-items-center">
+              <select name="role" class="form-select form-select-sm" style="max-width: 170px;">
+                <option th:each="roleOpt : ${manageableRoles}"
+                        th:value="${roleOpt.name()}"
+                        th:text="${roleOpt.name()}"
+                        th:selected="${roleOpt == user.systemRole}">
+                  USER
+                </option>
+              </select>
+              <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+            </form>
+          </td>
+          <td>
+            <form th:action="@{'/admin/users/' + ${user.id} + '/permissions'}" method="post" class="d-flex gap-2 align-items-center">
+              <div class="form-check mb-0">
+                <input class="form-check-input"
+                       type="checkbox"
+                       th:id="${'canCreateProject-' + user.id}"
+                       name="canCreateProject"
+                       value="true"
+                       th:checked="${user.canCreateProject}">
+                <label class="form-check-label small" th:for="${'canCreateProject-' + user.id}">
+                  Allowed
+                </label>
+              </div>
+              <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+            </form>
+          </td>
+          <td th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy, HH:mm')}">created</td>
+          <td>
+            <form th:if="${user.active}" th:action="@{'/admin/users/' + ${user.id} + '/deactivate'}" method="post"
+                  onsubmit="return confirm('Deactivate this user? They will not be able to log in.');">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+            </form>
+            <span th:if="${!user.active}" class="small text-secondary">No actions</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+</html>

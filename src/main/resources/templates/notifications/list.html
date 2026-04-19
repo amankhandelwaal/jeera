@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"
+			xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Notifications', ~{::section})}">
+<section>
+	<div class="jeera-card p-4">
+		<div class="d-flex align-items-center justify-content-between mb-3">
+			<h1 class="h4 mb-0">Notifications</h1>
+			<div class="d-flex gap-2">
+				<form th:action="@{/notifications/mark-read}" method="post" class="mb-0">
+					<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+					<button type="submit" class="btn btn-outline-primary btn-sm">Mark all as read</button>
+				</form>
+				<a class="btn btn-outline-secondary btn-sm" th:href="@{/dashboard}">Back to dashboard</a>
+			</div>
+		</div>
+
+		<div th:if="${#lists.isEmpty(notifications)}" class="text-center py-4 text-secondary">
+			No notifications yet.
+		</div>
+
+		<div class="list-group" th:if="${!#lists.isEmpty(notifications)}">
+			<th:block th:each="notification : ${notifications}">
+				<a th:if="${notification.issue != null}"
+					 class="list-group-item list-group-item-action"
+					 th:classappend="${!notification.read} ? ' list-group-item-primary border-primary-subtle'"
+					 th:href="@{/projects/{pid}/issues/{iid}(pid=${notification.issue.project.id}, iid=${notification.issue.id})}">
+					<div class="d-flex align-items-start justify-content-between gap-2">
+						<div>
+							<div class="fw-semibold d-flex align-items-center gap-2">
+								<span th:text="${notification.message}">Notification message</span>
+								<span class="badge text-bg-primary" th:if="${!notification.read}">NEW</span>
+							</div>
+							<div class="small text-secondary"
+									 th:text="${'Issue #' + notification.issue.issueNumber + ' · ' + notification.issue.project.name}">
+								Issue reference
+							</div>
+						</div>
+						<div class="small text-secondary" th:text="${#temporals.format(notification.createdAt, 'dd MMM yyyy, HH:mm')}">time</div>
+					</div>
+				</a>
+
+				<a th:if="${notification.issue == null and notification.project != null}"
+					 class="list-group-item list-group-item-action"
+					 th:classappend="${!notification.read} ? ' list-group-item-primary border-primary-subtle'"
+					 th:href="@{/projects/{pid}/members(pid=${notification.project.id})}">
+					<div class="d-flex align-items-start justify-content-between gap-2">
+						<div>
+							<div class="fw-semibold d-flex align-items-center gap-2">
+								<span th:text="${notification.message}">Notification message</span>
+								<span class="badge text-bg-primary" th:if="${!notification.read}">NEW</span>
+							</div>
+							<div class="small text-secondary"
+									 th:text="${'Project · ' + notification.project.name}">
+								Project reference
+							</div>
+						</div>
+						<div class="small text-secondary" th:text="${#temporals.format(notification.createdAt, 'dd MMM yyyy, HH:mm')}">time</div>
+					</div>
+				</a>
+			</th:block>
+		</div>
+	</div>
+</section>
+</html>

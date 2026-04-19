@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Developer Dashboard', ~{::section})}">
+<section>
+  <div class="alert border-0 mb-4" style="background:#e6f1fb;color:#185fa5;">
+    Developer view: your assigned workflow across analysis, progress, and resolution.
+  </div>
+  <th:block th:replace="~{dashboard/user :: dashboardContent}"></th:block>
+</section>
+</html>

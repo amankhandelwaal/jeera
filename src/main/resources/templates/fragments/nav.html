@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="appNav" class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+  <div class="container">
+    <a class="navbar-brand text-primary" th:href="@{/dashboard}">Jeera</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <div class="navbar-nav me-auto mt-2 mt-lg-0" sec:authorize="isAuthenticated()">
+        <a class="nav-link" th:href="@{/dashboard}" sec:authorize="!hasRole('ADMIN')">Dashboard</a>
+        <a class="nav-link" th:href="@{/projects}" sec:authorize="!hasRole('ADMIN')">Projects</a>
+        <a class="nav-link" th:href="@{/admin/projects}" sec:authorize="hasRole('ADMIN')">Projects</a>
+        <a class="nav-link" th:href="@{/notifications}">Notifications</a>
+        <a class="nav-link" th:href="@{/profile}">Profile</a>
+        <a class="nav-link" sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users}">Users</a>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2 mt-3 mt-lg-0">
+        <div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-2">
+          <a class="notif-btn" th:href="@{/notifications}" aria-label="Notifications">
+            <span aria-hidden="true">&#128276;</span>
+            <span id="unread-badge" class="bg-danger text-white">0</span>
+          </a>
+
+          <span class="text-secondary small" sec:authentication="name">username</span>
+
+          <form th:action="@{/logout}" method="post" class="mb-0">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+          </form>
+        </div>
+
+        <div sec:authorize="isAnonymous()" class="d-flex align-items-center gap-2">
+          <a th:href="@{/login}" class="btn btn-outline-primary btn-sm">Login</a>
+          <a th:href="@{/register}" class="btn btn-primary btn-sm">Register</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+</body>
+</html>

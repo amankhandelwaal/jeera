@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en"
+			xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Issue Detail', ~{::section})}">
+<section>
+	<div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+		<div>
+			<p class="text-uppercase small fw-semibold text-secondary mb-1"
+				 th:text="${'Issue #' + issue.issueNumber + ' · ' + issue.project.name}">Issue #</p>
+			<h1 class="h4 mb-1" th:text="${issue.title}">Issue title</h1>
+			<div class="d-flex flex-wrap gap-2">
+				<span class="badge"
+							th:classappend="${issue.type.name() == 'BUG'} ? ' badge-type-bug' : (${issue.type.name() == 'ENHANCEMENT'} ? ' badge-type-enhancement' : ' badge-type-question')"
+							th:text="${issue.type}">TYPE</span>
+				<span class="badge"
+							th:classappend="${issue.priority.name() == 'HIGH'} ? ' badge-priority-high' : (${issue.priority.name() == 'MEDIUM'} ? ' badge-priority-medium' : ' badge-priority-low')"
+							th:text="${issue.priority}">PRIORITY</span>
+				<span class="badge"
+							th:classappend="${issue.status.name() == 'OPEN'} ? ' badge-status-open' : (${issue.status.name() == 'UNDER_VERIFICATION'} ? ' badge-status-verify' : (${issue.status.name() == 'RESOLVED' or issue.status.name() == 'CLOSED'} ? ' badge-status-done' : (${issue.status.name() == 'REJECTED' or issue.status.name() == 'MARK_REJECTED'} ? ' badge-status-reject' : ' badge-status-progress')))"
+							th:text="${issue.status}">STATUS</span>
+			</div>
+		</div>
+		<a class="btn btn-outline-secondary btn-sm"
+			 th:href="@{/projects/{id}/issues(id=${issue.project.id})}">Back to issues</a>
+	</div>
+
+	<div class="row g-4">
+		<div class="col-12 col-xl-8">
+			<div class="jeera-card p-4 mb-4">
+				<h2 class="h6 mb-3">Description</h2>
+				<p class="mb-0" th:text="${issue.description}">Issue description.</p>
+			</div>
+
+			<div class="jeera-card p-4 mb-4">
+				<h2 class="h6 mb-3">Comments</h2>
+
+				<div th:if="${#lists.isEmpty(comments)}" class="text-secondary small mb-3">No comments yet.</div>
+
+				<div th:if="${!#lists.isEmpty(comments)}" class="mb-3">
+					<div th:each="comment : ${comments}" class="border rounded-3 p-3 mb-2">
+						<div class="d-flex align-items-center justify-content-between mb-1">
+							<strong th:text="${comment.author.username}">author</strong>
+							<span class="small text-secondary"
+										th:text="${#temporals.format(comment.createdAt, 'dd MMM yyyy, HH:mm')}">time</span>
+						</div>
+						<p class="mb-0" th:text="${comment.body}">comment body</p>
+					</div>
+				</div>
+
+				<form th:action="@{/projects/{pid}/issues/{iid}/comments/(pid=${issue.project.id}, iid=${issue.id})}" method="post">
+					<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+					<label for="body" class="form-label fw-semibold">Add comment</label>
+					<textarea id="body" name="body" rows="3" class="form-control mb-2" placeholder="Write your comment..."></textarea>
+					<button type="submit" class="btn btn-primary btn-sm">Post comment</button>
+				</form>
+			</div>
+
+			<div class="jeera-card p-4">
+				<h2 class="h6 mb-3">Activity Log</h2>
+				<div th:if="${#lists.isEmpty(activityLogs)}" class="text-secondary small">No activity logs yet.</div>
+
+				<ul class="list-group list-group-flush" th:if="${!#lists.isEmpty(activityLogs)}">
+					<li class="list-group-item px-0" th:each="log : ${activityLogs}">
+						<div class="d-flex align-items-start justify-content-between gap-2">
+							<div>
+								<div class="fw-semibold" th:text="${log.action}">Action</div>
+								<div class="small text-secondary"
+										 th:text="${'by ' + log.actor.username + (log.oldValue != null ? (' · ' + log.oldValue + ' → ' + log.newValue) : '')}">
+									details
+								</div>
+							</div>
+							<div class="small text-secondary" th:text="${#temporals.format(log.timestamp, 'dd MMM yyyy, HH:mm')}">time</div>
+						</div>
+					</li>
+				</ul>
+			</div>
+		</div>
+
+		<div class="col-12 col-xl-4">
+			<div class="jeera-card p-4 mb-3">
+				<h2 class="h6 mb-3">Issue Metadata</h2>
+				<div class="small mb-2"><span class="text-secondary">Reporter:</span> <span th:text="${issue.reporter.username}">reporter</span></div>
+				<div class="small mb-2"><span class="text-secondary">Assignee:</span> <span th:text="${issue.assignee != null ? issue.assignee.username : 'Unassigned'}">assignee</span></div>
+				<div class="small mb-2"><span class="text-secondary">Created:</span> <span th:text="${#temporals.format(issue.createdAt, 'dd MMM yyyy, HH:mm')}">created</span></div>
+				<div class="small mb-2"><span class="text-secondary">Updated:</span> <span th:text="${#temporals.format(issue.updatedAt, 'dd MMM yyyy, HH:mm')}">updated</span></div>
+				<div class="small" th:if="${issue.closedAt != null}"><span class="text-secondary">Closed:</span> <span th:text="${#temporals.format(issue.closedAt, 'dd MMM yyyy, HH:mm')}">closed</span></div>
+			</div>
+
+			<div th:replace="~{fragments/action-bar :: issueActions(${issue}, ${updateIssueDto})}"></div>
+		</div>
+	</div>
+</section>
+</html>
