@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<nav th:fragment="appNav" class="navbar navbar-expand-lg border-bottom sticky-top app-navbar">
+  <div class="container">
+    <a class="navbar-brand text-primary" th:href="@{/dashboard}">Jeera</a>
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+            aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <div class="navbar-nav me-auto mt-2 mt-lg-0" sec:authorize="isAuthenticated()">
+        <a class="nav-link" th:href="@{/dashboard}" sec:authorize="!hasRole('ADMIN')">Dashboard</a>
+        <a class="nav-link" th:href="@{/projects}" sec:authorize="!hasRole('ADMIN')">Projects</a>
+        <a class="nav-link" th:href="@{/admin/dashboard(tab='users')}" sec:authorize="hasRole('ADMIN')">Dashboard</a>
+        <a class="nav-link" th:href="@{/notifications}">Notifications</a>
+        <a class="nav-link" th:href="@{/profile}">Profile</a>
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2 mt-3 mt-lg-0">
+        <button type="button"
+            id="themeToggle"
+            class="btn btn-sm btn-outline-secondary theme-toggle"
+            aria-label="Toggle color theme"
+            aria-pressed="false"
+            title="Toggle color theme">
+          <span data-theme-icon aria-hidden="true">◐</span>
+          <span data-theme-label>Dark</span>
+        </button>
+
+        <div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-2">
+          <a class="notif-btn" th:href="@{/notifications}" aria-label="Notifications" title="Notifications">
+            <span aria-hidden="true">&#128276;</span>
+            <span id="unread-badge" class="bg-danger text-white">0</span>
+          </a>
+
+          <span class="jeera-role-indicator"
+            sec:authorize="hasRole('ADMIN')"
+            style="background:var(--jeera-role-admin-bg);color:var(--jeera-role-admin-text);">Admin</span>
+          <span class="jeera-role-indicator"
+                sec:authorize="hasRole('USER')"
+                style="background:var(--jeera-role-pm-bg);color:var(--jeera-role-pm-text);">User</span>
+
+          <span class="text-secondary small" sec:authentication="name">username</span>
+
+          <form th:action="@{/logout}" method="post" class="mb-0">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Logout</button>
+          </form>
+        </div>
+
+        <div sec:authorize="isAnonymous()" class="d-flex align-items-center gap-2">
+          <a th:href="@{/login}" class="btn btn-outline-primary btn-sm">Login</a>
+          <a th:href="@{/register}" class="btn btn-primary btn-sm">Register</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+</body>
+</html>

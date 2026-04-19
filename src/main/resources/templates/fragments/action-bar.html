@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="issueActions(issue, updateIssueDto)" class="jeera-card p-4">
+  <h2 class="h6 mb-3">Issue Actions</h2>
+
+  <div class="small text-secondary mb-3" th:if="${!(canManageIssue or canUpdateAsAssignee or canVerifyAsTester)}">
+    You can view and comment on this issue. Transition actions depend on project role and assignment.
+  </div>
+
+  <div th:if="${canManageIssue}" class="mb-3">
+    <div class="small text-uppercase text-secondary fw-semibold mb-2">PM/Admin</div>
+    <form th:action="@{/projects/{pid}/issues/{iid}/assign(pid=${issue.project.id}, iid=${issue.id})}" method="post" class="mb-3">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <label for="assigneeId" class="form-label">Assign developer</label>
+      <select id="assigneeId" name="assigneeId" class="form-select" required aria-label="Assign developer to issue">
+        <option value="" selected disabled>Select a project developer</option>
+        <option th:each="developer : ${assignableDevelopers}"
+                th:value="${developer.id}"
+                th:text="${developer.username + ' (' + developer.email + ')'}">developer</option>
+      </select>
+      <div class="small text-secondary mt-1" th:if="${#lists.isEmpty(assignableDevelopers)}">
+        No DEVELOPER members available. Add developers from the project members page first.
+      </div>
+      <button type="submit" class="btn btn-outline-primary btn-sm mt-2" th:disabled="${#lists.isEmpty(assignableDevelopers)}">Assign developer</button>
+    </form>
+  </div>
+
+  <div th:if="${canVerifyAsTester and issue.status.name() == 'RESOLVED'}" class="mb-3">
+    <div class="small text-uppercase text-secondary fw-semibold mb-2">Tester</div>
+    <form th:action="@{/projects/{pid}/issues/{iid}/pickup(pid=${issue.project.id}, iid=${issue.id})}" method="post" class="mb-0">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <button type="submit" class="btn btn-outline-success btn-sm">Pick up for verification</button>
+    </form>
+  </div>
+
+  <div th:if="${canManageIssue or canUpdateAsAssignee or canVerifyAsTester}">
+    <div class="small text-uppercase text-secondary fw-semibold mb-2">Status Update</div>
+    <form th:action="@{/projects/{pid}/issues/{iid}/status(pid=${issue.project.id}, iid=${issue.id})}"
+          th:object="${updateIssueDto}"
+          method="post"
+          class="mb-0">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <label for="status" class="form-label">Status</label>
+      <select id="status" class="form-select" th:field="*{status}" aria-label="Update issue status">
+        <option value="">Select status</option>
+        <option th:each="status : ${T(com.jeera.model.enums.IssueStatus).values()}"
+              th:value="${status}"
+              th:text="${status}">STATUS</option>
+      </select>
+      <div class="form-text">Only valid transitions for your role and current status will be accepted.</div>
+      <button type="submit" class="btn btn-primary btn-sm mt-2">Update status</button>
+    </form>
+  </div>
+</div>
+</body>
+</html>

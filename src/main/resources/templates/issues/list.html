@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en"
+			xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="issuesTable(project, issues)">
+	<div class="table-responsive">
+		<table class="table issues-table align-middle mb-0" id="issuesTable">
+			<thead>
+			<tr>
+				<th>#</th>
+				<th>Title</th>
+				<th>Type</th>
+				<th>Priority</th>
+				<th>Status</th>
+				<th>Reporter</th>
+				<th>Assignee</th>
+				<th class="text-end">Actions</th>
+			</tr>
+			</thead>
+			<tbody>
+			<tr th:if="${#lists.isEmpty(issues)}">
+				<td colspan="8" class="text-center jeera-muted py-4">No issues in this project yet.</td>
+			</tr>
+			<tr th:each="issue : ${issues}"
+					th:attr="data-status=${issue.status.name()},data-priority=${issue.priority.name()},data-type=${issue.type.name()},data-search=${(issue.title + ' ' + issue.reporter.username + ' ' + (issue.assignee != null ? issue.assignee.username : 'unassigned')).toLowerCase()}">
+				<td th:text="${issue.issueNumber}">1</td>
+				<td>
+					<a class="issue-title text-decoration-none"
+						 th:href="@{/projects/{pid}/issues/{iid}(pid=${project.id}, iid=${issue.id})}"
+						 th:text="${issue.title}">Issue title</a>
+				</td>
+				<td>
+					<span class="badge"
+								th:classappend="${issue.type.name() == 'BUG'} ? ' badge-type-bug' : (${issue.type.name() == 'ENHANCEMENT'} ? ' badge-type-enhancement' : ' badge-type-question')"
+								th:text="${issue.type}">TYPE</span>
+				</td>
+				<td>
+					<span class="badge"
+								th:classappend="${issue.priority.name() == 'HIGH'} ? ' badge-priority-high' : (${issue.priority.name() == 'MEDIUM'} ? ' badge-priority-medium' : ' badge-priority-low')"
+								th:text="${issue.priority}">PRIORITY</span>
+				</td>
+				<td>
+					<span class="badge"
+								th:classappend="${issue.status.name() == 'OPEN'} ? ' badge-status-open' : (${issue.status.name() == 'UNDER_VERIFICATION'} ? ' badge-status-verify' : (${issue.status.name() == 'RESOLVED' or issue.status.name() == 'CLOSED'} ? ' badge-status-done' : (${issue.status.name() == 'REJECTED' or issue.status.name() == 'MARK_REJECTED'} ? ' badge-status-reject' : ' badge-status-progress')))"
+								th:text="${issue.status}">STATUS</span>
+				</td>
+				<td th:text="${issue.reporter.username}">reporter</td>
+				<td th:text="${issue.assignee != null ? issue.assignee.username : 'Unassigned'}">assignee</td>
+				<td class="text-end">
+					<a class="btn btn-sm btn-outline-secondary me-1"
+						 th:if="${canManageMembers}"
+						 th:href="@{/projects/{pid}/issues/{iid}(pid=${project.id}, iid=${issue.id})}"
+						 th:aria-label="${(issue.assignee == null ? 'Assign issue ' : 'Reassign issue ') + issue.issueNumber}"
+						 th:text="${issue.assignee == null ? 'Assign' : 'Reassign'}">Assign</a>
+					<a class="btn btn-sm btn-outline-primary"
+						 th:href="@{/projects/{pid}/issues/{iid}(pid=${project.id}, iid=${issue.id})}"
+						 th:aria-label="${'Open issue ' + issue.issueNumber}">Open</a>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+</body>
+</html>

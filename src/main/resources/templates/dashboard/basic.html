@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Dashboard', ~{::section})}">
+<section>
+  <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h1 class="h4 mb-0">My Dashboard</h1>
+    <div class="btn-group" role="group" aria-label="Dashboard Mode">
+      <a class="btn btn-sm"
+         th:classappend="${activeDashboardMode == 'projects'} ? ' btn-primary' : ' btn-outline-primary'"
+         th:href="@{/dashboard(view='projects')}">Projects</a>
+      <a class="btn btn-sm"
+         th:classappend="${activeDashboardMode == 'developer'} ? ' btn-primary' : ' btn-outline-primary'"
+         th:href="@{/dashboard(view='developer')}"
+         th:if="${hasDeveloperMembership}">Developer</a>
+      <a class="btn btn-sm"
+         th:classappend="${activeDashboardMode == 'tester'} ? ' btn-primary' : ' btn-outline-primary'"
+         th:href="@{/dashboard(view='tester')}"
+         th:if="${hasTesterMembership}">Tester</a>
+    </div>
+  </div>
+
+  <div class="jeera-card p-4 mb-4" th:if="${showProjectsMode}">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h2 class="h5 mb-0">Your Projects</h2>
+      <a class="btn btn-primary btn-sm" th:href="@{/projects/new}" th:if="${currentUser.systemRole.name() == 'ADMIN' or currentUser.canCreateProject}">+ New Project</a>
+    </div>
+
+    <div th:if="${#lists.isEmpty(ownedProjects)}" class="text-center py-4 jeera-muted">
+      You do not own any projects yet.
+    </div>
+
+    <div class="pm-project-grid" th:if="${!#lists.isEmpty(ownedProjects)}">
+      <article class="pm-project-card" th:each="project : ${ownedProjects}">
+        <div class="pm-project-head">
+          <h3 class="pm-project-title" th:text="${project.name}">Project</h3>
+        </div>
+        <p class="pm-project-description"
+           th:text="${project.description != null and !project.description.isBlank() ? project.description : 'No description yet'}">
+          Description
+        </p>
+        <div class="pm-project-stats">
+          <div class="pm-project-stat">
+            <span class="pm-project-stat-label">Open</span>
+            <span class="pm-project-stat-value"
+                  th:text="${projectIssueStats[project.id] != null ? projectIssueStats[project.id]['open'] : 0}">0</span>
+          </div>
+          <div class="pm-project-stat">
+            <span class="pm-project-stat-label">Unassigned</span>
+            <span class="pm-project-stat-value"
+                  th:text="${projectIssueStats[project.id] != null ? projectIssueStats[project.id]['unassigned'] : 0}">0</span>
+          </div>
+          <div class="pm-project-stat">
+            <span class="pm-project-stat-label">In progress</span>
+            <span class="pm-project-stat-value"
+                  th:text="${projectIssueStats[project.id] != null ? projectIssueStats[project.id]['inProgress'] : 0}">0</span>
+          </div>
+          <div class="pm-project-stat">
+            <span class="pm-project-stat-label">Members</span>
+            <span class="pm-project-stat-value"
+                  th:text="${projectMemberCounts[project.id] != null ? projectMemberCounts[project.id] : 0}">0</span>
+          </div>
+        </div>
+        <div class="pm-project-actions">
+          <a class="btn btn-sm btn-outline-primary" th:href="@{/projects/{id}/issues(id=${project.id})}">View issues</a>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <div class="jeera-card p-4 mb-4" th:if="${showDeveloperMode}">
+    <h2 class="h5 mb-3">Developer Workboard</h2>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="metric-card p-3">
+          <div class="metric-label">Assigned</div>
+          <div class="metric-value" th:text="${#lists.size(assignedIssues)}">0</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="metric-card p-3">
+          <div class="metric-label">In Analysis</div>
+          <div class="metric-value" th:text="${#lists.size(inAnalysisIssues)}">0</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="metric-card p-3">
+          <div class="metric-label">In Progress</div>
+          <div class="metric-value" th:text="${#lists.size(inProgressIssues)}">0</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="metric-card p-3">
+          <div class="metric-label">Resolved</div>
+          <div class="metric-value" th:text="${#lists.size(resolvedIssues)}">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3" aria-label="Developer kanban board">
+      <div class="col-12 col-lg-6 col-xl-3">
+        <div class="kanban-column">
+          <div class="kanban-header"><span>Assigned</span><span th:text="${#lists.size(assignedIssues)}">0</span></div>
+          <div th:if="${#lists.isEmpty(assignedIssues)}" class="small text-secondary">No issues</div>
+          <a th:each="issue : ${assignedIssues}" class="issue-card" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">
+            <span class="issue-id" th:text="${'#' + issue.issueNumber + ' · ' + issue.project.name}">#0</span>
+            <p class="issue-title" th:text="${issue.title}">Title</p>
+          </a>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6 col-xl-3">
+        <div class="kanban-column">
+          <div class="kanban-header"><span>In Analysis</span><span th:text="${#lists.size(inAnalysisIssues)}">0</span></div>
+          <div th:if="${#lists.isEmpty(inAnalysisIssues)}" class="small text-secondary">No issues</div>
+          <a th:each="issue : ${inAnalysisIssues}" class="issue-card" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">
+            <span class="issue-id" th:text="${'#' + issue.issueNumber + ' · ' + issue.project.name}">#0</span>
+            <p class="issue-title" th:text="${issue.title}">Title</p>
+          </a>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6 col-xl-3">
+        <div class="kanban-column">
+          <div class="kanban-header"><span>In Progress</span><span th:text="${#lists.size(inProgressIssues)}">0</span></div>
+          <div th:if="${#lists.isEmpty(inProgressIssues)}" class="small text-secondary">No issues</div>
+          <a th:each="issue : ${inProgressIssues}" class="issue-card" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">
+            <span class="issue-id" th:text="${'#' + issue.issueNumber + ' · ' + issue.project.name}">#0</span>
+            <p class="issue-title" th:text="${issue.title}">Title</p>
+          </a>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6 col-xl-3">
+        <div class="kanban-column">
+          <div class="kanban-header"><span>Resolved</span><span th:text="${#lists.size(resolvedIssues)}">0</span></div>
+          <div th:if="${#lists.isEmpty(resolvedIssues)}" class="small text-secondary">No issues</div>
+          <a th:each="issue : ${resolvedIssues}" class="issue-card" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">
+            <span class="issue-id" th:text="${'#' + issue.issueNumber + ' · ' + issue.project.name}">#0</span>
+            <p class="issue-title" th:text="${issue.title}">Title</p>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="jeera-card p-4" th:if="${showTesterMode}">
+    <h2 class="h5 mb-3">Tester Queue</h2>
+    <div class="row g-4">
+      <div class="col-12 col-lg-6">
+        <h3 class="h6 mb-2">Pending Verification</h3>
+        <p class="text-secondary small">Resolved issues waiting for pickup.</p>
+        <div th:if="${#lists.isEmpty(pendingVerificationIssues)}" class="small text-secondary">No pending issues.</div>
+        <div th:each="issue : ${pendingVerificationIssues}" class="issue-card">
+          <span class="issue-id" th:text="${'#' + issue.issueNumber + ' · ' + issue.project.name}">#0</span>
+          <p class="issue-title mb-2" th:text="${issue.title}">Title</p>
+          <div class="d-flex gap-2">
+            <form th:action="@{/projects/{pid}/issues/{iid}/pickup(pid=${issue.project.id}, iid=${issue.id})}" method="post" class="mb-0">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <input type="hidden" name="redirect" value="dashboard">
+              <button type="submit" class="btn btn-sm btn-outline-success" aria-label="Pick issue for verification">Pick up</button>
+            </form>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">Open</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-12 col-lg-6">
+        <h3 class="h6 mb-2">My Active Verifications</h3>
+        <p class="text-secondary small">Issues currently under verification by you.</p>
+        <div th:if="${#lists.isEmpty(activeVerificationIssues)}" class="small text-secondary">No active verifications.</div>
+        <a th:each="issue : ${activeVerificationIssues}" class="issue-card" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">
+          <span class="issue-id" th:text="${'#' + issue.issueNumber + ' · ' + issue.project.name}">#0</span>
+          <p class="issue-title" th:text="${issue.title}">Title</p>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+</html>

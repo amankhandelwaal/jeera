@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Admin Dashboard', ~{::section})}">
+<section>
+  <div class="jeera-card p-4">
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <h1 class="h4 mb-0">Admin Dashboard</h1>
+      <div class="btn-group" role="group" aria-label="Admin Dashboard Tabs">
+        <a class="btn btn-sm"
+           th:classappend="${activeAdminTab == 'users'} ? ' btn-primary' : ' btn-outline-primary'"
+           th:href="@{/admin/dashboard(tab='users')}">Users</a>
+        <a class="btn btn-sm"
+           th:classappend="${activeAdminTab == 'projects'} ? ' btn-primary' : ' btn-outline-primary'"
+           th:href="@{/admin/dashboard(tab='projects')}">Projects</a>
+      </div>
+    </div>
+
+    <div th:if="${showUsersTab}">
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h2 class="h5 mb-0">User Management</h2>
+        <a class="btn btn-primary btn-sm" th:href="@{/admin/users/new}">+ Create user</a>
+      </div>
+
+      <p class="small text-secondary mb-3">
+        Project creation is controlled separately from system role.
+      </p>
+
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead>
+          <tr>
+            <th>ID</th>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>System Role</th>
+            <th>Project Creation Permission</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:if="${#lists.isEmpty(users)}">
+            <td colspan="8" class="text-center jeera-muted py-4">No users found.</td>
+          </tr>
+          <tr th:each="user : ${users}">
+            <td th:text="${user.id}">1</td>
+            <td class="fw-semibold" th:text="${user.username}">username</td>
+            <td th:text="${user.email}">email</td>
+            <td>
+              <span class="badge" th:classappend="${user.active} ? ' text-bg-success' : ' text-bg-secondary'"
+                    th:text="${user.active ? 'Active' : 'Inactive'}">Active</span>
+            </td>
+            <td>
+              <form th:action="@{'/admin/users/' + ${user.id} + '/role'}" method="post" class="d-flex gap-2 align-items-center">
+                <select name="role" class="form-select form-select-sm" style="max-width: 170px;">
+                  <option th:each="roleOpt : ${manageableRoles}"
+                          th:value="${roleOpt.name()}"
+                          th:text="${roleOpt.name()}"
+                          th:selected="${roleOpt == user.systemRole}">
+                    USER
+                  </option>
+                </select>
+                <button type="submit" class="btn btn-sm btn-outline-primary">Save</button>
+              </form>
+            </td>
+            <td>
+              <form th:action="@{'/admin/users/' + ${user.id} + '/permissions'}" method="post" class="d-flex gap-2 align-items-center">
+                <div class="form-check mb-0">
+                  <input class="form-check-input"
+                         type="checkbox"
+                         th:id="${'canCreateProject-' + user.id}"
+                         name="canCreateProject"
+                         value="true"
+                         th:checked="${user.canCreateProject}">
+                  <label class="form-check-label small" th:for="${'canCreateProject-' + user.id}">
+                    Allowed
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Save</button>
+              </form>
+            </td>
+            <td th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy, HH:mm')}">created</td>
+            <td>
+              <form th:if="${user.active}" th:action="@{'/admin/users/' + ${user.id} + '/deactivate'}" method="post"
+                    onsubmit="return confirm('Deactivate this user? They will not be able to log in.');">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Deactivate</button>
+              </form>
+              <span th:if="${!user.active}" class="small text-secondary">No actions</span>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div th:if="${showProjectsTab}">
+      <div class="border rounded-3 p-3 mb-4">
+        <h2 class="h6 mb-3">Create Project</h2>
+        <form th:action="@{/admin/projects}" method="post" class="row g-2 align-items-end">
+          <div class="col-12 col-lg-4">
+            <label class="form-label small">Name</label>
+            <input name="name" class="form-control form-control-sm" required>
+          </div>
+          <div class="col-12 col-lg-4">
+            <label class="form-label small">Description</label>
+            <input name="description" class="form-control form-control-sm">
+          </div>
+          <div class="col-12 col-lg-3">
+            <label class="form-label small">PM (Owner)</label>
+            <select name="ownerId" class="form-select form-select-sm" required>
+              <option value="" selected disabled>Select owner</option>
+              <option th:each="owner : ${eligibleOwners}" th:value="${owner.id}" th:text="${owner.username}">owner</option>
+            </select>
+          </div>
+          <div class="col-12 col-lg-1">
+            <button type="submit" class="btn btn-sm btn-primary w-100">Create</button>
+          </div>
+        </form>
+      </div>
+
+      <p class="small text-secondary mb-4">
+        Central view of all projects, owners, and team composition. Use PM reassignment before deactivating users who own projects.
+      </p>
+
+      <div class="d-flex justify-content-end mb-3">
+        <form th:action="@{/admin/dashboard}" method="get" class="d-flex gap-2 align-items-center">
+          <input type="hidden" name="tab" value="projects">
+          <label class="small text-secondary mb-0" for="ownerFilterId">Filter by PM</label>
+          <select id="ownerFilterId" name="ownerId" class="form-select form-select-sm" style="min-width: 220px;">
+            <option value="" th:selected="${ownerFilterId == null}">All owners</option>
+            <option th:each="owner : ${eligibleOwners}" th:value="${owner.id}" th:text="${owner.username}"
+                    th:selected="${ownerFilterId != null and ownerFilterId == owner.id}">owner</option>
+          </select>
+          <button type="submit" class="btn btn-sm btn-outline-secondary">Apply</button>
+        </form>
+      </div>
+
+      <div th:if="${#lists.isEmpty(projectOverviews)}" class="text-center py-4 jeera-muted">
+        No projects found.
+      </div>
+
+      <div class="row g-3" th:if="${!#lists.isEmpty(projectOverviews)}">
+        <div class="col-12 col-lg-6" th:each="overview : ${projectOverviews}">
+          <div class="jeera-card p-3 h-100">
+            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+              <div>
+                <h2 class="h5 mb-1" th:text="${overview.project.name}">Project Name</h2>
+                <div class="small text-secondary"
+                     th:text="${overview.project.description != null and !overview.project.description.isBlank() ? overview.project.description : 'No description yet'}">
+                  Description
+                </div>
+              </div>
+              <a class="btn btn-sm btn-outline-primary" th:href="@{/projects/{id}/members(id=${overview.project.id})}">Members</a>
+            </div>
+
+            <div class="small mb-3">
+              <span class="text-secondary">Owner:</span>
+              <span class="fw-semibold" th:text="${overview.project.owner != null ? overview.project.owner.username : 'Unknown'}">owner</span>
+            </div>
+
+            <form th:action="@{/admin/projects/{id}/owner(id=${overview.project.id})}" method="post"
+                  class="row g-2 align-items-end mb-3">
+              <div class="col-9">
+                <label class="form-label small mb-1">Reassign PM</label>
+                <select class="form-select form-select-sm" name="ownerId" required>
+                  <option th:each="owner : ${eligibleOwners}" th:value="${owner.id}" th:text="${owner.username}"
+                          th:selected="${overview.project.owner != null and owner.id == overview.project.owner.id}">owner</option>
+                </select>
+              </div>
+              <div class="col-3">
+                <button class="btn btn-sm btn-outline-primary w-100" type="submit">Reassign</button>
+              </div>
+            </form>
+
+            <form th:action="@{/admin/projects/{id}/update(id=${overview.project.id})}" method="post" class="row g-2 mb-3">
+              <div class="col-12">
+                <label class="form-label small mb-1">Project Name</label>
+                <input name="name" class="form-control form-control-sm" th:value="${overview.project.name}" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label small mb-1">Description</label>
+                <input name="description" class="form-control form-control-sm" th:value="${overview.project.description}">
+              </div>
+              <div class="col-12">
+                <input type="hidden" name="ownerId" th:value="${overview.project.owner != null ? overview.project.owner.id : ''}">
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Update Project</button>
+              </div>
+            </form>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="badge text-bg-light" th:text="${'Total Members: ' + #lists.size(overview.members)}">Total Members</span>
+              <span class="badge badge-role-dev" th:text="${'Developers: ' + overview.developerCount}">Developers</span>
+              <span class="badge badge-role-tester" th:text="${'Testers: ' + overview.testerCount}">Testers</span>
+            </div>
+
+            <div th:if="${#lists.isEmpty(overview.members)}" class="small text-secondary">
+              No project members yet.
+            </div>
+
+            <div class="d-flex flex-wrap gap-2" th:if="${!#lists.isEmpty(overview.members)}">
+              <span th:each="member : ${overview.members}" class="badge"
+                    th:classappend="${member.projectRole.name() == 'DEVELOPER'} ? ' badge-role-dev' : ' badge-role-tester'"
+                    th:text="${member.user.username + ' · ' + member.projectRole.name()}">
+                member
+              </span>
+            </div>
+
+            <form class="mt-3" th:action="@{/admin/projects/{id}/delete(id=${overview.project.id})}" method="post"
+                  onsubmit="return confirm('Delete this project? This cannot be undone.');">
+              <button type="submit" class="btn btn-sm btn-outline-danger">Delete Project</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</html>

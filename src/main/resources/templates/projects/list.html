@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en"
+			xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Projects', ~{::section})}">
+<section>
+	<div class="jeera-card p-4">
+		<div class="d-flex align-items-center justify-content-between mb-3">
+			<h1 class="h4 mb-0">My Projects</h1>
+			<a class="btn btn-primary btn-sm" th:if="${canCreateProject}" th:href="@{/projects/new}">+ New project</a>
+		</div>
+
+		<div class="alert alert-light border" th:if="${!canCreateProject}">
+			<div class="small mb-0">
+				Project creation requires admin approval.
+				Ask an admin to grant <strong>Project Creation Permission</strong> for your account.
+			</div>
+		</div>
+
+		<div th:if="${#lists.isEmpty(projects)}" class="text-center py-4 jeera-muted">
+			You do not have access to any projects yet.
+		</div>
+
+		<div class="table-responsive" th:if="${!#lists.isEmpty(projects)}">
+			<table class="table align-middle mb-0">
+				<thead>
+				<tr>
+					<th>Name</th>
+					<th>Description</th>
+					<th>Owner</th>
+					<th class="text-end">Actions</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:each="project : ${projects}">
+					<td class="fw-semibold" th:text="${project.name}">Project</td>
+					<td class="text-secondary"
+							th:text="${project.description != null and !project.description.isBlank() ? project.description : 'No description yet'}">
+						Description
+					</td>
+					<td th:text="${project.owner != null ? project.owner.username : 'Unknown'}">Owner</td>
+					<td class="text-end">
+						<a class="btn btn-sm btn-outline-primary me-1" th:href="@{/projects/{id}/issues(id=${project.id})}">Issues</a>
+						<a class="btn btn-sm btn-outline-secondary" th:href="@{/projects/{id}/members(id=${project.id})}">Members</a>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</section>
+</html>
