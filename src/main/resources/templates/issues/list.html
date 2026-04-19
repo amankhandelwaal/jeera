@@ -50,9 +50,11 @@
 					<a class="btn btn-sm btn-outline-secondary me-1"
 						 th:if="${canManageMembers}"
 						 th:href="@{/projects/{pid}/issues/{iid}(pid=${project.id}, iid=${issue.id})}"
+						 th:aria-label="${(issue.assignee == null ? 'Assign issue ' : 'Reassign issue ') + issue.issueNumber}"
 						 th:text="${issue.assignee == null ? 'Assign' : 'Reassign'}">Assign</a>
 					<a class="btn btn-sm btn-outline-primary"
-						 th:href="@{/projects/{pid}/issues/{iid}(pid=${project.id}, iid=${issue.id})}">Open</a>
+						 th:href="@{/projects/{pid}/issues/{iid}(pid=${project.id}, iid=${issue.id})}"
+						 th:aria-label="${'Open issue ' + issue.issueNumber}">Open</a>
 				</td>
 			</tr>
 			</tbody>

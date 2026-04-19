@@ -25,7 +25,7 @@
 	</div>
 
 	<div class="row g-4">
-		<div class="col-12 col-xl-8">
+		<div class="col-12 col-xl-8 issue-detail-column">
 			<div class="jeera-card p-4 mb-4">
 				<h2 class="h6 mb-3">Description</h2>
 				<p class="mb-0" th:text="${issue.description}">Issue description.</p>
@@ -50,7 +50,8 @@
 				<form th:action="@{/projects/{pid}/issues/{iid}/comments/(pid=${issue.project.id}, iid=${issue.id})}" method="post">
 					<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 					<label for="body" class="form-label fw-semibold">Add comment</label>
-					<textarea id="body" name="body" rows="3" class="form-control mb-2" placeholder="Write your comment..."></textarea>
+					<textarea id="body" name="body" rows="3" class="form-control mb-2" placeholder="Write your comment..." required aria-describedby="commentHint"></textarea>
+					<div id="commentHint" class="form-text">Comments are visible to all project members.</div>
 					<button type="submit" class="btn btn-primary btn-sm">Post comment</button>
 				</form>
 			</div>
@@ -76,7 +77,7 @@
 			</div>
 		</div>
 
-		<div class="col-12 col-xl-4">
+		<div class="col-12 col-xl-4 issue-detail-sidebar">
 			<div class="jeera-card p-4 mb-3">
 				<h2 class="h6 mb-3">Issue Metadata</h2>
 				<div class="small mb-2"><span class="text-secondary">Reporter:</span> <span th:text="${issue.reporter.username}">reporter</span></div>

@@ -4,7 +4,7 @@
 <section>
 	<div class="row justify-content-center">
 		<div class="col-12 col-md-8 col-lg-5">
-			<div class="card border-0 shadow-sm rounded-4">
+			<div class="card rounded-4 jeera-auth-card">
 				<div class="card-body p-4 p-lg-5">
 					<div class="text-center mb-4">
 						<h1 class="h4 mb-1">Welcome Back</h1>
@@ -23,13 +23,13 @@
 						<div class="mb-3">
 							<label for="username" class="form-label">Username</label>
 							<input id="username" name="username" type="text" class="form-control form-control-lg"
-										 autocomplete="username" required>
+										 autocomplete="username" required aria-required="true">
 						</div>
 
 						<div class="mb-4">
 							<label for="password" class="form-label">Password</label>
 							<input id="password" name="password" type="password" class="form-control form-control-lg"
-										 autocomplete="current-password" required>
+										 autocomplete="current-password" required aria-required="true">
 						</div>
 
 						<button type="submit" class="btn btn-primary btn-lg w-100">Login</button>

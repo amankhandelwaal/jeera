@@ -4,7 +4,7 @@
 			th:replace="~{layout/base :: layout('Notifications', ~{::section})}">
 <section>
 	<div class="jeera-card p-4">
-		<div class="d-flex align-items-center justify-content-between mb-3">
+		<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
 			<h1 class="h4 mb-0">Notifications</h1>
 			<div class="d-flex gap-2">
 				<form th:action="@{/notifications/mark-read}" method="post" class="mb-0">
@@ -22,8 +22,8 @@
 		<div class="list-group" th:if="${!#lists.isEmpty(notifications)}">
 			<th:block th:each="notification : ${notifications}">
 				<a th:if="${notification.issue != null}"
-					 class="list-group-item list-group-item-action"
-					 th:classappend="${!notification.read} ? ' list-group-item-primary border-primary-subtle'"
+					 class="list-group-item list-group-item-action notification-item"
+					 th:classappend="${!notification.read} ? ' notification-item-unread'"
 					 th:href="@{/projects/{pid}/issues/{iid}(pid=${notification.issue.project.id}, iid=${notification.issue.id})}">
 					<div class="d-flex align-items-start justify-content-between gap-2">
 						<div>
@@ -41,8 +41,8 @@
 				</a>
 
 				<a th:if="${notification.issue == null and notification.project != null}"
-					 class="list-group-item list-group-item-action"
-					 th:classappend="${!notification.read} ? ' list-group-item-primary border-primary-subtle'"
+					 class="list-group-item list-group-item-action notification-item"
+					 th:classappend="${!notification.read} ? ' notification-item-unread'"
 					 th:href="@{/projects/{pid}/members(pid=${notification.project.id})}">
 					<div class="d-flex align-items-start justify-content-between gap-2">
 						<div>

@@ -3,7 +3,7 @@
       xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/base :: layout('PM Dashboard', ~{::section})}">
 <section>
-  <div class="alert border-0 mb-4" style="background:#eeedfe;color:#3c3489;">
+  <div class="alert border-0 mb-4 badge-role-pm">
     PM view: project ownership, staffing, and assignment operations.
   </div>
   <th:block th:replace="~{dashboard/user :: dashboardContent}"></th:block>

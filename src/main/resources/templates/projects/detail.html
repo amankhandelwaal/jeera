@@ -54,12 +54,14 @@
 			</div>
 		</div>
 
-		<div class="row g-2 mb-3">
+		<div class="row g-2 mb-3" aria-label="Issue filter controls">
 			<div class="col-12 col-md-4">
-				<input id="issueSearch" type="search" class="form-control form-control-sm" placeholder="Search title, reporter, assignee...">
+				<label class="visually-hidden" for="issueSearch">Search issues</label>
+				<input id="issueSearch" type="search" class="form-control form-control-sm" placeholder="Search title, reporter, assignee..." aria-label="Search by title, reporter, or assignee">
 			</div>
 			<div class="col-6 col-md-2">
-				<select id="statusFilter" class="form-select form-select-sm">
+				<label class="visually-hidden" for="statusFilter">Filter by status</label>
+				<select id="statusFilter" class="form-select form-select-sm" aria-label="Filter by status">
 					<option value="">All status</option>
 					<option th:each="status : ${T(com.jeera.model.enums.IssueStatus).values()}"
 									th:value="${status.name()}"
@@ -67,7 +69,8 @@
 				</select>
 			</div>
 			<div class="col-6 col-md-2">
-				<select id="priorityFilter" class="form-select form-select-sm">
+				<label class="visually-hidden" for="priorityFilter">Filter by priority</label>
+				<select id="priorityFilter" class="form-select form-select-sm" aria-label="Filter by priority">
 					<option value="">All priority</option>
 					<option th:each="priority : ${T(com.jeera.model.enums.IssuePriority).values()}"
 									th:value="${priority.name()}"
@@ -75,7 +78,8 @@
 				</select>
 			</div>
 			<div class="col-6 col-md-2">
-				<select id="typeFilter" class="form-select form-select-sm">
+				<label class="visually-hidden" for="typeFilter">Filter by type</label>
+				<select id="typeFilter" class="form-select form-select-sm" aria-label="Filter by type">
 					<option value="">All type</option>
 					<option th:each="type : ${T(com.jeera.model.enums.IssueType).values()}"
 									th:value="${type.name()}"
@@ -83,7 +87,7 @@
 				</select>
 			</div>
 			<div class="col-6 col-md-2">
-				<button id="resetFilters" type="button" class="btn btn-outline-dark btn-sm w-100">Reset</button>
+				<button id="resetFilters" type="button" class="btn btn-outline-secondary btn-sm w-100">Reset</button>
 			</div>
 		</div>
 

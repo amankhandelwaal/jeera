@@ -3,7 +3,7 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-<nav th:fragment="appNav" class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+<nav th:fragment="appNav" class="navbar navbar-expand-lg border-bottom sticky-top app-navbar">
   <div class="container">
     <a class="navbar-brand text-primary" th:href="@{/dashboard}">Jeera</a>
 
@@ -16,18 +16,34 @@
       <div class="navbar-nav me-auto mt-2 mt-lg-0" sec:authorize="isAuthenticated()">
         <a class="nav-link" th:href="@{/dashboard}" sec:authorize="!hasRole('ADMIN')">Dashboard</a>
         <a class="nav-link" th:href="@{/projects}" sec:authorize="!hasRole('ADMIN')">Projects</a>
-        <a class="nav-link" th:href="@{/admin/projects}" sec:authorize="hasRole('ADMIN')">Projects</a>
+        <a class="nav-link" th:href="@{/admin/dashboard(tab='users')}" sec:authorize="hasRole('ADMIN')">Dashboard</a>
         <a class="nav-link" th:href="@{/notifications}">Notifications</a>
         <a class="nav-link" th:href="@{/profile}">Profile</a>
-        <a class="nav-link" sec:authorize="hasRole('ADMIN')" th:href="@{/admin/users}">Users</a>
       </div>
 
       <div class="ms-auto d-flex align-items-center gap-2 mt-3 mt-lg-0">
+        <button type="button"
+            id="themeToggle"
+            class="btn btn-sm btn-outline-secondary theme-toggle"
+            aria-label="Toggle color theme"
+            aria-pressed="false"
+            title="Toggle color theme">
+          <span data-theme-icon aria-hidden="true">◐</span>
+          <span data-theme-label>Dark</span>
+        </button>
+
         <div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-2">
-          <a class="notif-btn" th:href="@{/notifications}" aria-label="Notifications">
+          <a class="notif-btn" th:href="@{/notifications}" aria-label="Notifications" title="Notifications">
             <span aria-hidden="true">&#128276;</span>
             <span id="unread-badge" class="bg-danger text-white">0</span>
           </a>
+
+          <span class="jeera-role-indicator"
+            sec:authorize="hasRole('ADMIN')"
+            style="background:var(--jeera-role-admin-bg);color:var(--jeera-role-admin-text);">Admin</span>
+          <span class="jeera-role-indicator"
+                sec:authorize="hasRole('USER')"
+                style="background:var(--jeera-role-pm-bg);color:var(--jeera-role-pm-text);">User</span>
 
           <span class="text-secondary small" sec:authentication="name">username</span>
 

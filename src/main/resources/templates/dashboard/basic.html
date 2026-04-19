@@ -97,7 +97,7 @@
       </div>
     </div>
 
-    <div class="row g-3">
+    <div class="row g-3" aria-label="Developer kanban board">
       <div class="col-12 col-lg-6 col-xl-3">
         <div class="kanban-column">
           <div class="kanban-header"><span>Assigned</span><span th:text="${#lists.size(assignedIssues)}">0</span></div>
@@ -155,7 +155,7 @@
             <form th:action="@{/projects/{pid}/issues/{iid}/pickup(pid=${issue.project.id}, iid=${issue.id})}" method="post" class="mb-0">
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
               <input type="hidden" name="redirect" value="dashboard">
-              <button type="submit" class="btn btn-sm btn-outline-success">Pick up</button>
+              <button type="submit" class="btn btn-sm btn-outline-success" aria-label="Pick issue for verification">Pick up</button>
             </form>
             <a class="btn btn-sm btn-outline-secondary" th:href="@{/projects/{pid}/issues/{iid}(pid=${issue.project.id}, iid=${issue.id})}">Open</a>
           </div>

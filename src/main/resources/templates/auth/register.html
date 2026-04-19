@@ -4,7 +4,7 @@
 <section>
 	<div class="row justify-content-center">
 		<div class="col-12 col-md-9 col-lg-6">
-			<div class="card border-0 shadow-sm rounded-4">
+			<div class="card rounded-4 jeera-auth-card">
 				<div class="card-body p-4 p-lg-5">
 					<div class="mb-4 text-center">
 						<h1 class="h4 mb-1">Create User Account</h1>
@@ -51,6 +51,7 @@
 							<div class="invalid-feedback" th:if="${#fields.hasErrors('systemRole')}" th:errors="*{systemRole}">
 								Role error
 							</div>
+							<div class="form-text">Use ADMIN only for full system access. Default project work uses USER.</div>
 						</div>
 
 						<div class="d-grid">

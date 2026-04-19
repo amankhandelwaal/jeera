@@ -33,6 +33,7 @@
 									 maxlength="180"
 									 placeholder="Summarize the issue in one line">
 						<div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Title error</div>
+							<div class="form-text">Keep it concise and specific for faster triage.</div>
 					</div>
 
 					<div class="mb-3">
