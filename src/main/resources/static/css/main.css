@@ -92,6 +92,10 @@ body {
 body {
   background-color: var(--jeera-bg);
   color: var(--jeera-text);
+  --bs-body-color: var(--jeera-text);
+  --bs-body-bg: var(--jeera-bg);
+  --bs-emphasis-color: var(--jeera-text);
+  --bs-secondary-color: var(--jeera-text-muted);
   transition: background-color 0.18s ease, color 0.18s ease;
 }
 
@@ -106,6 +110,17 @@ a:hover {
 .text-secondary,
 .jeera-muted {
   color: var(--jeera-text-muted) !important;
+}
+
+.text-dark,
+.text-body,
+.text-black,
+.text-black-50 {
+  color: var(--jeera-text) !important;
+}
+
+.form-control-plaintext {
+  color: var(--jeera-text) !important;
 }
 
 .app-navbar {
@@ -125,17 +140,27 @@ a:hover {
   letter-spacing: 0.2px;
 }
 
+.app-navbar .navbar-brand,
+.app-navbar .navbar-brand.text-primary {
+  color: var(--jeera-link) !important;
+}
+
+.app-navbar .navbar-brand:hover,
+.app-navbar .navbar-brand.text-primary:hover {
+  color: var(--jeera-link-hover) !important;
+}
+
 .app-navbar .nav-link {
-  color: var(--jeera-text-muted);
+  color: var(--jeera-text-muted) !important;
 }
 
 .app-navbar .nav-link:hover,
 .app-navbar .nav-link:focus-visible {
-  color: var(--jeera-link);
+  color: var(--jeera-link) !important;
 }
 
 .app-navbar .nav-link.active {
-  color: var(--jeera-text);
+  color: var(--jeera-text) !important;
 }
 
 .jeera-role-indicator {
