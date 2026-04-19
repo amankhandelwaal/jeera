@@ -25,7 +25,13 @@ public class SecurityConfig {
             .anyRequest().authenticated())
         .formLogin(form -> form
             .loginPage("/login")
-            .defaultSuccessUrl("/dashboard", true)
+            .successHandler((request, response, authentication) -> {
+              boolean isAdmin = authentication.getAuthorities().stream()
+                  .anyMatch(grantedAuthority -> "ROLE_ADMIN".equals(grantedAuthority.getAuthority())
+                      || "ADMIN".equals(grantedAuthority.getAuthority()));
+              String targetUrl = isAdmin ? "/admin/users" : "/dashboard";
+              response.sendRedirect(request.getContextPath() + targetUrl);
+            })
             .permitAll())
         .logout(logout -> logout
             .logoutSuccessUrl("/login?logout")

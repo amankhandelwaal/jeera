@@ -75,22 +75,44 @@ public class AuthController {
   }
 
   @GetMapping("admin/users")
-  public String users(Authentication authentication, Model model) {
-    User actor = requireActor(authentication);
-    ensureAdmin(actor);
-
-    model.addAttribute("users", userService.getAllUsers());
-    model.addAttribute("manageableRoles", List.of(UserRole.USER, UserRole.ADMIN));
-    return "admin/users";
+  public String users() {
+    return "redirect:/admin/dashboard?tab=users";
   }
 
   @GetMapping("admin/projects")
-  public String adminProjects(
+  public String adminProjectsRedirect(@RequestParam(required = false) Long ownerId) {
+    if (ownerId == null) {
+      return "redirect:/admin/dashboard?tab=projects";
+    }
+    return "redirect:/admin/dashboard?tab=projects&ownerId=" + ownerId;
+  }
+
+  @GetMapping("admin/dashboard")
+  public String adminDashboard(
+      @RequestParam(defaultValue = "users") String tab,
       @RequestParam(required = false) Long ownerId,
       Authentication authentication,
       Model model) {
     User actor = requireActor(authentication);
     ensureAdmin(actor);
+
+    String normalizedTab = "projects".equalsIgnoreCase(tab) ? "projects" : "users";
+    model.addAttribute("activeAdminTab", normalizedTab);
+    model.addAttribute("showUsersTab", "users".equals(normalizedTab));
+    model.addAttribute("showProjectsTab", "projects".equals(normalizedTab));
+
+    populateAdminUsersModel(model);
+    populateAdminProjectsModel(model, ownerId);
+
+    return "admin/dashboard";
+  }
+
+  private void populateAdminUsersModel(Model model) {
+    model.addAttribute("users", userService.getAllUsers());
+    model.addAttribute("manageableRoles", List.of(UserRole.USER, UserRole.ADMIN));
+  }
+
+  private void populateAdminProjectsModel(Model model, Long ownerId) {
 
     List<ProjectOverview> projectOverviews = projectService.getAllProjects().stream()
         .filter(
@@ -109,7 +131,6 @@ public class AuthController {
     model.addAttribute("projectOverviews", projectOverviews);
     model.addAttribute("ownerFilterId", ownerId);
     model.addAttribute("eligibleOwners", projectService.getEligibleActiveOwners());
-    return "admin/projects";
   }
 
   @GetMapping("admin/users/new")
