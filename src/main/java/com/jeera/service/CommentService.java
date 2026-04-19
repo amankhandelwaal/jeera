@@ -35,4 +35,8 @@ public class CommentService {
 
     return commentRepository.save(comment);
   }
+
+  public java.util.List<Comment> getIssueComments(Long issueId) {
+    return commentRepository.findPageFeedByIssueId(issueId);
+  }
 }

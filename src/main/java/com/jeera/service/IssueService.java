@@ -5,7 +5,9 @@ import com.jeera.model.ProjectMember;
 import com.jeera.model.User;
 import com.jeera.model.enums.IssueStatus;
 import com.jeera.model.enums.ProjectRole;
+import com.jeera.model.enums.UserRole;
 import com.jeera.repository.IssueRepository;
+import com.jeera.repository.ProjectMemberRepository;
 import com.jeera.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,21 +27,29 @@ public class IssueService {
 
   private final IssueRepository issueRepository;
   private final UserRepository userRepository;
+  private final ProjectMemberRepository projectMemberRepository;
   private final ActivityLogService activityLogService;
   private final NotificationService notificationService;
 
   public Issue findById(Long issueId) {
-    return issueRepository.findById(issueId)
+    return issueRepository.findPageDetailById(issueId)
         .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
   }
 
   public List<Issue> findByProjectId(Long projectId) {
-    return issueRepository.findByProjectIdOrderByCreatedAtDesc(projectId);
+    return issueRepository.findPageListByProjectId(projectId);
   }
 
   public Issue createIssue(Issue newIssue, Long reporterId) {
     User reporter = userRepository.findById(reporterId)
         .orElseThrow(() -> new EntityNotFoundException("Reporter not found with id: " + reporterId));
+
+    if (newIssue.getProject() == null || newIssue.getProject().getId() == null) {
+      throw new IllegalStateException("Project is required to create an issue");
+    }
+
+    Integer currentMaxIssueNumber = issueRepository.findMaxIssueNumberByProjectId(newIssue.getProject().getId());
+    newIssue.setIssueNumber((currentMaxIssueNumber == null ? 0 : currentMaxIssueNumber) + 1);
 
     LocalDateTime now = LocalDateTime.now();
     newIssue.setReporter(reporter);
@@ -49,6 +60,15 @@ public class IssueService {
 
     Issue savedIssue = issueRepository.save(newIssue);
     activityLogService.createActivityLog(savedIssue, reporter, "Issue created", null, IssueStatus.REPORTED.name());
+
+    User projectOwner = savedIssue.getProject() != null ? savedIssue.getProject().getOwner() : null;
+    if (projectOwner != null && !projectOwner.getId().equals(reporter.getId())) {
+      notificationService.createNotification(
+          projectOwner,
+          "New issue #" + savedIssue.getIssueNumber() + " was created in your project",
+          savedIssue);
+    }
+
     return savedIssue;
   }
 
@@ -62,6 +82,15 @@ public class IssueService {
 
     IssueStatus oldStatus = issue.getStatus();
     validateTransition(oldStatus, IssueStatus.ASSIGNED);
+
+    ProjectMember membership = projectMemberRepository.findByProjectIdAndUserId(issue.getProject().getId(), assigneeId)
+        .orElseThrow(() -> new IllegalStateException("Assignee must be a member of this project"));
+    if (membership.getProjectRole() != ProjectRole.DEVELOPER) {
+      throw new IllegalStateException("Assignee must have DEVELOPER role in this project");
+    }
+    if (assignee.getSystemRole() == UserRole.ADMIN) {
+      throw new IllegalStateException("Admin users cannot be assigned to project issues");
+    }
 
     issue.setAssignee(assignee);
     issue.setStatus(IssueStatus.ASSIGNED);
@@ -85,6 +114,15 @@ public class IssueService {
     return savedIssue;
   }
 
+  public List<User> getAssignableDevelopers(Long projectId) {
+    return projectMemberRepository.findByProjectIdAndProjectRole(projectId, ProjectRole.DEVELOPER)
+        .stream()
+        .map(ProjectMember::getUser)
+        .filter(user -> user.getSystemRole() != UserRole.ADMIN)
+        .sorted(Comparator.comparing(User::getUsername, String.CASE_INSENSITIVE_ORDER))
+        .toList();
+  }
+
   public Issue updateIssueStatus(Long issueId, IssueStatus newStatus, Long actorId) {
     Issue issue = issueRepository.findById(issueId)
         .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
@@ -92,6 +130,7 @@ public class IssueService {
         .orElseThrow(() -> new EntityNotFoundException("Actor not found with id: " + actorId));
 
     IssueStatus oldStatus = issue.getStatus();
+    validateActorCanPerformTransition(issue, oldStatus, newStatus, actor);
     validateTransition(oldStatus, newStatus);
 
     issue.setStatus(newStatus);
@@ -107,6 +146,16 @@ public class IssueService {
       issue.setAssignee(null);
     }
 
+    if (newStatus == IssueStatus.UNDER_VERIFICATION) {
+      ProjectMember testerMembership = projectMemberRepository
+          .findByProjectIdAndUserId(issue.getProject().getId(), actor.getId())
+          .orElseThrow(() -> new IllegalStateException("Only project testers can pick issues for verification"));
+      if (testerMembership.getProjectRole() != ProjectRole.TESTER) {
+        throw new IllegalStateException("Only project testers can pick issues for verification");
+      }
+      issue.setAssignee(actor);
+    }
+
     Issue savedIssue = issueRepository.save(issue);
 
     activityLogService.createActivityLog(
@@ -116,8 +165,12 @@ public class IssueService {
         oldStatus.name(),
         newStatus.name());
 
-    notifyStatusChange(savedIssue, oldStatus, newStatus);
+    notifyStatusChange(savedIssue, oldStatus, newStatus, actor);
     return savedIssue;
+  }
+
+  public Issue pickUpForVerification(Long issueId, Long actorId) {
+    return updateIssueStatus(issueId, IssueStatus.UNDER_VERIFICATION, actorId);
   }
 
   private void validateTransition(IssueStatus oldStatus, IssueStatus newStatus) {
@@ -134,6 +187,8 @@ public class IssueService {
       case IN_PROGRESS -> valid = (newStatus == IssueStatus.RESOLVED);
       case RESOLVED -> valid = (newStatus == IssueStatus.UNDER_VERIFICATION);
       case UNDER_VERIFICATION -> valid = (newStatus == IssueStatus.CLOSED || newStatus == IssueStatus.OPEN);
+      case MARK_REJECTED -> valid = (newStatus == IssueStatus.OPEN || newStatus == IssueStatus.REJECTED);
+      case REJECTED -> valid = (newStatus == IssueStatus.OPEN);
       default -> valid = false;
     }
 
@@ -146,58 +201,90 @@ public class IssueService {
     return status == IssueStatus.CLOSED || status == IssueStatus.REJECTED || status == IssueStatus.MARK_REJECTED;
   }
 
-  private void notifyStatusChange(Issue issue, IssueStatus oldStatus, IssueStatus newStatus) {
+  private void notifyStatusChange(Issue issue, IssueStatus oldStatus, IssueStatus newStatus, User actor) {
+    Set<Long> notifiedUserIds = new LinkedHashSet<>();
+    notifyProjectOwnerForExternalAction(issue, oldStatus, newStatus, actor, notifiedUserIds);
+
     if (newStatus == IssueStatus.RESOLVED) {
       for (ProjectMember member : issue.getProject().getMembers()) {
         if (member.getProjectRole() == ProjectRole.TESTER) {
-          notificationService.createNotification(
+          sendIssueNotification(
               member.getUser(),
               "Issue #" + issue.getIssueNumber() + " is ready for verification",
-              issue);
+              issue,
+              notifiedUserIds);
         }
       }
       return;
     }
 
     if (newStatus == IssueStatus.CLOSED) {
-      Set<Long> notifiedUserIds = new LinkedHashSet<>();
       User reporter = issue.getReporter();
-      if (reporter != null && notifiedUserIds.add(reporter.getId())) {
-        notificationService.createNotification(
-            reporter,
-            "Issue #" + issue.getIssueNumber() + " was closed",
-            issue);
-      }
+      sendIssueNotification(
+          reporter,
+          "Issue #" + issue.getIssueNumber() + " was closed",
+          issue,
+          notifiedUserIds);
 
       User assignee = issue.getAssignee();
-      if (assignee != null && notifiedUserIds.add(assignee.getId())) {
-        notificationService.createNotification(
-            assignee,
-            "Issue #" + issue.getIssueNumber() + " was closed",
-            issue);
-      }
+      sendIssueNotification(
+          assignee,
+          "Issue #" + issue.getIssueNumber() + " was closed",
+          issue,
+          notifiedUserIds);
       return;
     }
 
     if (newStatus == IssueStatus.REJECTED || newStatus == IssueStatus.MARK_REJECTED) {
-      User reporter = issue.getReporter();
-      if (reporter != null) {
-        notificationService.createNotification(
-            reporter,
-            "Issue #" + issue.getIssueNumber() + " was marked " + newStatus,
-            issue);
-      }
+      sendIssueNotification(
+          issue.getReporter(),
+          "Issue #" + issue.getIssueNumber() + " was marked " + newStatus,
+          issue,
+          notifiedUserIds);
+    }
+  }
+
+  private void notifyProjectOwnerForExternalAction(
+      Issue issue,
+      IssueStatus oldStatus,
+      IssueStatus newStatus,
+      User actor,
+      Set<Long> notifiedUserIds) {
+    User projectOwner = issue.getProject() != null ? issue.getProject().getOwner() : null;
+    if (projectOwner == null || actor == null || projectOwner.getId().equals(actor.getId())) {
       return;
     }
 
-    if (oldStatus == IssueStatus.UNDER_VERIFICATION && newStatus == IssueStatus.OPEN) {
-      User projectOwner = issue.getProject().getOwner();
-      if (projectOwner != null) {
-        notificationService.createNotification(
-            projectOwner,
-            "Issue #" + issue.getIssueNumber() + " was reopened during verification",
-            issue);
-      }
+    sendIssueNotification(
+        projectOwner,
+        "Issue #" + issue.getIssueNumber() + " moved from " + oldStatus + " to " + newStatus,
+        issue,
+        notifiedUserIds);
+  }
+
+  private void sendIssueNotification(User recipient, String message, Issue issue, Set<Long> notifiedUserIds) {
+    if (recipient == null || recipient.getId() == null) {
+      return;
+    }
+    if (notifiedUserIds.add(recipient.getId())) {
+      notificationService.createNotification(recipient, message, issue);
+    }
+  }
+
+  private void validateActorCanPerformTransition(Issue issue, IssueStatus oldStatus, IssueStatus newStatus,
+      User actor) {
+    boolean isProjectOwner = issue.getProject() != null
+        && issue.getProject().getOwner() != null
+        && issue.getProject().getOwner().getId().equals(actor.getId());
+    boolean isAdmin = actor.getSystemRole() == UserRole.ADMIN;
+    boolean canManageIssue = isProjectOwner || isAdmin;
+
+    if (newStatus == IssueStatus.REJECTED && !canManageIssue) {
+      throw new IllegalStateException("Only PM/Admin can mark an issue as REJECTED");
+    }
+
+    if (oldStatus == IssueStatus.MARK_REJECTED && !canManageIssue) {
+      throw new IllegalStateException("Only PM/Admin can review MARK_REJECTED issues");
     }
   }
 }

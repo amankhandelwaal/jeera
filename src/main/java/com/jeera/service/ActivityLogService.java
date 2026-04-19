@@ -37,4 +37,8 @@ public class ActivityLogService {
 
     return activityLogRepository.save(activityLog);
   }
+
+  public java.util.List<ActivityLog> getIssueActivityLogs(Long issueId) {
+    return activityLogRepository.findPageFeedByIssueId(issueId);
+  }
 }
