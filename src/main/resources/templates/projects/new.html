@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Create Project', ~{::section})}">
+<section>
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-7">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-md-5">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+            <div>
+              <h1 class="h4 mb-1">Create Project</h1>
+              <p class="text-secondary mb-0">Define a new workspace and start tracking issues.</p>
+            </div>
+            <a class="btn btn-outline-secondary btn-sm" th:href="@{/dashboard}">Back to dashboard</a>
+          </div>
+
+          <form th:action="@{/projects/new}" th:object="${project}" method="post" novalidate>
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <div class="mb-3">
+              <label for="name" class="form-label fw-semibold">Project name</label>
+              <input id="name" type="text" class="form-control" th:field="*{name}" maxlength="120"
+                     placeholder="e.g. Payments Gateway Stability">
+            </div>
+
+            <div class="mb-4">
+              <label for="description" class="form-label fw-semibold">Description</label>
+              <textarea id="description" class="form-control" th:field="*{description}" rows="5"
+                        maxlength="1000" placeholder="Describe scope, team, and goals for this project."></textarea>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+              <button type="submit" class="btn btn-primary">Create project</button>
+              <a class="btn btn-outline-secondary" th:href="@{/dashboard}">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</html>

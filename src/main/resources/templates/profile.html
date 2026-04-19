@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('My Profile', ~{::section})}">
+<section>
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8 col-xl-7">
+      <div class="jeera-card p-4 p-md-5">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+          <h1 class="h4 mb-0">My Profile</h1>
+          <span class="badge text-bg-secondary" th:text="${user.systemRole}">ROLE</span>
+        </div>
+
+        <form th:action="@{/profile}" method="post" class="row g-3">
+          <div class="col-12 col-md-6">
+            <label for="username" class="form-label jeera-muted">Username</label>
+            <input id="username" name="username" class="form-control" th:value="${user.username}" required>
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="email" class="form-label jeera-muted">Email</label>
+            <input id="email" name="email" type="email" class="form-control" th:value="${user.email}" required>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label jeera-muted">User ID</label>
+            <div class="form-control-plaintext" th:text="${user.id}">1</div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label jeera-muted">Joined</label>
+            <div class="form-control-plaintext" th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy, HH:mm')}">date</div>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary btn-sm">Save Profile</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+</html>

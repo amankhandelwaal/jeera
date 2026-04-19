@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en"
+			xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Project Issues', ~{::section})}">
+<section>
+	<div class="jeera-card p-4 mb-4">
+		<div class="jeera-toolbar mb-3">
+			<div>
+				<h1 class="h4 mb-1" th:text="${project.name}">Project Name</h1>
+				<p class="jeera-muted mb-0"
+					 th:text="${project.description != null and !project.description.isBlank() ? project.description : 'No project description provided.'}">
+					Project description
+				</p>
+				<p class="small text-secondary mb-0 mt-1">Any member of this project can report an issue.</p>
+			</div>
+			<div class="d-flex flex-wrap gap-2">
+				<a class="btn btn-outline-secondary btn-sm"
+					 th:href="@{/projects/{id}/members(id=${project.id})}">Members</a>
+				<a class="btn btn-primary btn-sm"
+					 th:href="@{/projects/{id}/issues/new(id=${project.id})}">+ Report issue</a>
+			</div>
+		</div>
+
+		<div class="row g-2 mb-3">
+			<div class="col-6 col-md-2">
+				<div class="metric-card p-2">
+					<div class="metric-label">Open</div>
+					<div class="metric-value" th:text="${openCount}">0</div>
+				</div>
+			</div>
+			<div class="col-6 col-md-2">
+				<div class="metric-card p-2">
+					<div class="metric-label">Unassigned</div>
+					<div class="metric-value" th:text="${unassignedCount}">0</div>
+				</div>
+			</div>
+			<div class="col-6 col-md-2">
+				<div class="metric-card p-2">
+					<div class="metric-label">In Progress</div>
+					<div class="metric-value" th:text="${inProgressCount}">0</div>
+				</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<div class="metric-card p-2">
+					<div class="metric-label">Pending Verify</div>
+					<div class="metric-value" th:text="${pendingVerifyCount}">0</div>
+				</div>
+			</div>
+			<div class="col-6 col-md-3">
+				<div class="metric-card p-2">
+					<div class="metric-label">Closed</div>
+					<div class="metric-value" th:text="${closedCount}">0</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="row g-2 mb-3">
+			<div class="col-12 col-md-4">
+				<input id="issueSearch" type="search" class="form-control form-control-sm" placeholder="Search title, reporter, assignee...">
+			</div>
+			<div class="col-6 col-md-2">
+				<select id="statusFilter" class="form-select form-select-sm">
+					<option value="">All status</option>
+					<option th:each="status : ${T(com.jeera.model.enums.IssueStatus).values()}"
+									th:value="${status.name()}"
+									th:text="${status.name()}">STATUS</option>
+				</select>
+			</div>
+			<div class="col-6 col-md-2">
+				<select id="priorityFilter" class="form-select form-select-sm">
+					<option value="">All priority</option>
+					<option th:each="priority : ${T(com.jeera.model.enums.IssuePriority).values()}"
+									th:value="${priority.name()}"
+									th:text="${priority.name()}">PRIORITY</option>
+				</select>
+			</div>
+			<div class="col-6 col-md-2">
+				<select id="typeFilter" class="form-select form-select-sm">
+					<option value="">All type</option>
+					<option th:each="type : ${T(com.jeera.model.enums.IssueType).values()}"
+									th:value="${type.name()}"
+									th:text="${type.name()}">TYPE</option>
+				</select>
+			</div>
+			<div class="col-6 col-md-2">
+				<button id="resetFilters" type="button" class="btn btn-outline-dark btn-sm w-100">Reset</button>
+			</div>
+		</div>
+
+		<div th:replace="~{issues/list :: issuesTable(${project}, ${issues})}"></div>
+	</div>
+
+	<script>
+		(function () {
+			const searchInput = document.getElementById("issueSearch");
+			const statusFilter = document.getElementById("statusFilter");
+			const priorityFilter = document.getElementById("priorityFilter");
+			const typeFilter = document.getElementById("typeFilter");
+			const resetButton = document.getElementById("resetFilters");
+			const rows = Array.from(document.querySelectorAll("#issuesTable tbody tr[data-status]"));
+
+			function applyFilters() {
+				const search = (searchInput.value || "").trim().toLowerCase();
+				const status = statusFilter.value;
+				const priority = priorityFilter.value;
+				const type = typeFilter.value;
+
+				rows.forEach((row) => {
+					const rowStatus = row.getAttribute("data-status") || "";
+					const rowPriority = row.getAttribute("data-priority") || "";
+					const rowType = row.getAttribute("data-type") || "";
+					const rowSearch = row.getAttribute("data-search") || "";
+
+					const matchesSearch = !search || rowSearch.includes(search);
+					const matchesStatus = !status || rowStatus === status;
+					const matchesPriority = !priority || rowPriority === priority;
+					const matchesType = !type || rowType === type;
+
+					row.style.display = (matchesSearch && matchesStatus && matchesPriority && matchesType)
+						? ""
+						: "none";
+				});
+			}
+
+			[searchInput, statusFilter, priorityFilter, typeFilter].forEach((el) => {
+				el.addEventListener("input", applyFilters);
+				el.addEventListener("change", applyFilters);
+			});
+
+			resetButton.addEventListener("click", function () {
+				searchInput.value = "";
+				statusFilter.value = "";
+				priorityFilter.value = "";
+				typeFilter.value = "";
+				applyFilters();
+			});
+		})();
+	</script>
+</section>
+</html>

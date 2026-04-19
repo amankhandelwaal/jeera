@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Register User - Jeera', ~{::section})}">
+<section>
+	<div class="row justify-content-center">
+		<div class="col-12 col-md-9 col-lg-6">
+			<div class="card border-0 shadow-sm rounded-4">
+				<div class="card-body p-4 p-lg-5">
+					<div class="mb-4 text-center">
+						<h1 class="h4 mb-1">Create User Account</h1>
+						<p class="text-secondary mb-0">Admin-only registration form</p>
+					</div>
+
+					<form th:action="@{/admin/users/new}" th:object="${user}" method="post" novalidate>
+						<div class="mb-3">
+							<label for="username" class="form-label">Username</label>
+							<input id="username" type="text" th:field="*{username}" class="form-control"
+										 th:classappend="${#fields.hasErrors('username')} ? ' is-invalid'" autocomplete="username">
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">
+								Username error
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<label for="email" class="form-label">Email</label>
+							<input id="email" type="email" th:field="*{email}" class="form-control"
+									 th:classappend="${#fields.hasErrors('email')} ? ' is-invalid'" autocomplete="email">
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
+								Email error
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<label for="passwordHash" class="form-label">Password</label>
+							<input id="passwordHash" type="password" th:field="*{passwordHash}" class="form-control"
+										 th:classappend="${#fields.hasErrors('passwordHash')} ? ' is-invalid'"
+										 autocomplete="new-password">
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('passwordHash')}" th:errors="*{passwordHash}">
+								Password error
+							</div>
+						</div>
+
+						<div class="mb-4">
+							<label for="systemRole" class="form-label">System Role</label>
+							<select id="systemRole" th:field="*{systemRole}" class="form-select"
+											th:classappend="${#fields.hasErrors('systemRole')} ? ' is-invalid'">
+								<option value="" selected disabled>Select role</option>
+								<option value="ADMIN">ADMIN</option>
+								<option value="USER">USER</option>
+							</select>
+							<div class="invalid-feedback" th:if="${#fields.hasErrors('systemRole')}" th:errors="*{systemRole}">
+								Role error
+							</div>
+						</div>
+
+						<div class="d-grid">
+							<button type="submit" class="btn btn-primary btn-lg">Create User</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+</html>
+

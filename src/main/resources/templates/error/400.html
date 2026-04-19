@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: layout('Bad Request', ~{::section})}">
+<section>
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8">
+      <div class="jeera-card p-4 p-md-5 text-center">
+        <h1 class="display-6 mb-2">400</h1>
+        <h2 class="h4 mb-3" th:text="${errorTitle}">Invalid Operation</h2>
+        <p class="text-secondary mb-4" th:text="${errorMessage}">The request could not be processed.</p>
+        <div class="d-flex justify-content-center gap-2">
+          <a class="btn btn-primary" th:href="@{/dashboard}">Go to Dashboard</a>
+          <a class="btn btn-outline-secondary" th:href="@{/login}">Back to Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+			th:replace="~{layout/base :: layout('Login - Jeera', ~{::section})}">
+<section>
+	<div class="row justify-content-center">
+		<div class="col-12 col-md-8 col-lg-5">
+			<div class="card border-0 shadow-sm rounded-4">
+				<div class="card-body p-4 p-lg-5">
+					<div class="text-center mb-4">
+						<h1 class="h4 mb-1">Welcome Back</h1>
+						<p class="text-secondary mb-0">Sign in to continue to Jeera</p>
+					</div>
+
+					<div th:if="${param.error}" class="alert alert-danger" role="alert">
+						Invalid username and password
+					</div>
+
+					<div th:if="${param.logout}" class="alert alert-success" role="alert">
+						You have been logged out successfully
+					</div>
+
+					<form th:action="@{/login}" method="post" novalidate>
+						<div class="mb-3">
+							<label for="username" class="form-label">Username</label>
+							<input id="username" name="username" type="text" class="form-control form-control-lg"
+										 autocomplete="username" required>
+						</div>
+
+						<div class="mb-4">
+							<label for="password" class="form-label">Password</label>
+							<input id="password" name="password" type="password" class="form-control form-control-lg"
+										 autocomplete="current-password" required>
+						</div>
+
+						<button type="submit" class="btn btn-primary btn-lg w-100">Login</button>
+					</form>
+
+					<p class="small text-secondary text-center mt-3 mb-0">
+						New here?
+						<a th:href="@{/register}" class="text-decoration-none">Create an account</a>
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+</html>
+
