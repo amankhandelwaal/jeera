@@ -3,6 +3,7 @@ package com.jeera.repository;
 import com.jeera.model.Issue;
 import com.jeera.model.enums.IssueStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.Collection;
@@ -18,6 +19,19 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
   List<Issue> findByProjectIdAndStatus(Long projectId, IssueStatus status);
 
   long countByProjectId(Long projectId);
+
+  long countByProjectIdAndStatusNotIn(Long projectId, Collection<IssueStatus> statuses);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+      update Issue i
+      set i.duplicateOf = null
+      where i.project.id = :projectId
+      """)
+  int clearDuplicateReferencesByProjectId(Long projectId);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  int deleteByProjectId(Long projectId);
 
   List<Issue> findByAssigneeIdAndStatusIn(Long assigneeId, Collection<IssueStatus> statuses);
 

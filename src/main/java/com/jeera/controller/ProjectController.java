@@ -167,6 +167,14 @@ public class ProjectController {
   }
 
   private Project resolveAccessibleProject(User actor, Long projectId) {
+    if (actor.getSystemRole() == UserRole.ADMIN) {
+      return projectService.getAllProjects()
+          .stream()
+          .filter(project -> project.getId().equals(projectId))
+          .findFirst()
+          .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
+    }
+
     return projectService.getAccessibleProjects(actor.getId())
         .stream()
         .filter(project -> project.getId().equals(projectId))

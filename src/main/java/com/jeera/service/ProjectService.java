@@ -3,9 +3,13 @@ package com.jeera.service;
 import com.jeera.model.Project;
 import com.jeera.model.ProjectMember;
 import com.jeera.model.User;
+import com.jeera.model.enums.IssueStatus;
 import com.jeera.model.enums.ProjectRole;
 import com.jeera.model.enums.UserRole;
 import com.jeera.repository.IssueRepository;
+import com.jeera.repository.NotificationRepository;
+import com.jeera.repository.ActivityLogRepository;
+import com.jeera.repository.CommentRepository;
 import com.jeera.repository.ProjectMemberRepository;
 import com.jeera.repository.ProjectRepository;
 import com.jeera.repository.UserRepository;
@@ -15,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +28,16 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProjectService {
 
+  private static final Collection<IssueStatus> TERMINAL_STATUSES = List.of(
+      IssueStatus.CLOSED,
+      IssueStatus.REJECTED);
+
   private final ProjectRepository projectRepository;
   private final ProjectMemberRepository projectMemberRepository;
   private final IssueRepository issueRepository;
+  private final NotificationRepository notificationRepository;
+  private final ActivityLogRepository activityLogRepository;
+  private final CommentRepository commentRepository;
   private final UserRepository userRepository;
   private final NotificationService notificationService;
 
@@ -103,7 +115,12 @@ public class ProjectService {
   }
 
   @Transactional
-  public void deleteProjectByAdmin(Long projectId, Long actorUserId) {
+  public void deleteProjectByAdmin(
+      Long projectId,
+      Long actorUserId,
+      boolean forceDelete,
+      String confirmProjectName,
+      String deleteReason) {
     User actor = userRepository.findById(actorUserId)
         .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + actorUserId));
     ensureAdmin(actor);
@@ -111,20 +128,51 @@ public class ProjectService {
     Project project = projectRepository.findById(projectId)
         .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
 
-    long issueCount = issueRepository.countByProjectId(projectId);
-    if (issueCount > 0) {
-      notificationService.notifyActiveAdmins(
-          "Project delete blocked for '" + project.getName()
-              + "' because it still has issues. Action attempted by admin '"
-              + actor.getUsername() + "'.",
-          project);
-      throw new IllegalStateException("Cannot delete a project that still has issues");
+    long unresolvedIssueCount = getUnresolvedIssueCount(projectId);
+    if (unresolvedIssueCount > 0 && !forceDelete) {
+      throw new IllegalStateException(
+          "Cannot delete project while it has " + unresolvedIssueCount
+              + " unresolved issue(s). Use force delete with confirmation.");
     }
 
+    if (unresolvedIssueCount > 0 && forceDelete) {
+      String expectedName = project.getName();
+      String providedName = confirmProjectName == null ? "" : confirmProjectName.trim();
+      if (!expectedName.equals(providedName)) {
+        throw new IllegalStateException("Force delete confirmation failed: project name does not match");
+      }
+      if (deleteReason == null || deleteReason.trim().isEmpty()) {
+        throw new IllegalStateException("Force delete requires a reason");
+      }
+    }
+
+    notificationRepository.deleteByDirectProjectId(projectId);
+    notificationRepository.deleteByIssueProjectId(projectId);
+    activityLogRepository.deleteByProjectId(projectId);
+    commentRepository.deleteByProjectId(projectId);
+    issueRepository.clearDuplicateReferencesByProjectId(projectId);
+    int deletedIssueCount = issueRepository.deleteByProjectId(projectId);
     projectMemberRepository.deleteByProjectId(projectId);
     projectRepository.delete(project);
-    notificationService.notifyActiveAdmins(
-        "Project '" + project.getName() + "' was deleted by admin '" + actor.getUsername() + "'.");
+
+    if (unresolvedIssueCount > 0 && forceDelete) {
+      notificationService.notifyActiveAdmins(
+          "FORCE DELETE: Project '" + project.getName() + "' was deleted by admin '"
+              + actor.getUsername() + "'. Deleted issues: " + deletedIssueCount
+              + ". Reason: " + deleteReason.trim() + ".");
+    } else {
+      notificationService.notifyActiveAdmins(
+          "Project '" + project.getName() + "' was deleted by admin '" + actor.getUsername()
+              + "' along with " + deletedIssueCount + " issue(s). ");
+    }
+  }
+
+  public long getTotalIssueCount(Long projectId) {
+    return issueRepository.countByProjectId(projectId);
+  }
+
+  public long getUnresolvedIssueCount(Long projectId) {
+    return issueRepository.countByProjectIdAndStatusNotIn(projectId, TERMINAL_STATUSES);
   }
 
   public ProjectMember addProjectMember(User user, Project project, ProjectRole projectRole) {

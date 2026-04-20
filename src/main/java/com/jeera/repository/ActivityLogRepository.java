@@ -2,6 +2,7 @@ package com.jeera.repository;
 
 import com.jeera.model.ActivityLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -17,4 +18,11 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
       order by a.timestamp desc
       """)
   List<ActivityLog> findPageFeedByIssueId(Long issueId);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+      delete from ActivityLog a
+      where a.issue.project.id = :projectId
+      """)
+  int deleteByProjectId(Long projectId);
 }

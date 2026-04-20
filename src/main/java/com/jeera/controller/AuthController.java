@@ -9,6 +9,8 @@ import com.jeera.service.ProjectService;
 import com.jeera.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -28,6 +30,8 @@ import java.util.List;
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class AuthController {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
   private final UserService userService;
   private final ProjectService projectService;
@@ -124,7 +128,9 @@ public class AuthController {
               .toList();
           long developers = members.stream().filter(pm -> pm.getProjectRole() == ProjectRole.DEVELOPER).count();
           long testers = members.stream().filter(pm -> pm.getProjectRole() == ProjectRole.TESTER).count();
-          return new ProjectOverview(project, members, developers, testers);
+          long totalIssues = projectService.getTotalIssueCount(project.getId());
+          long unresolvedIssues = projectService.getUnresolvedIssueCount(project.getId());
+          return new ProjectOverview(project, members, developers, testers, totalIssues, unresolvedIssues);
         })
         .toList();
 
@@ -302,6 +308,9 @@ public class AuthController {
   @PostMapping("admin/projects/{id}/delete")
   public String deleteProjectByAdmin(
       @PathVariable Long id,
+      @RequestParam(defaultValue = "false") boolean forceDelete,
+      @RequestParam(required = false) String confirmProjectName,
+      @RequestParam(required = false) String deleteReason,
       Authentication authentication,
       RedirectAttributes redirectAttributes) {
 
@@ -309,9 +318,10 @@ public class AuthController {
     ensureAdmin(actor);
 
     try {
-      projectService.deleteProjectByAdmin(id, actor.getId());
+      projectService.deleteProjectByAdmin(id, actor.getId(), forceDelete, confirmProjectName, deleteReason);
       redirectAttributes.addFlashAttribute("successMessage", "Project deleted successfully");
-    } catch (IllegalStateException ex) {
+    } catch (RuntimeException ex) {
+      LOGGER.error("Failed to delete project {} by admin {}", id, actor.getUsername(), ex);
       redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
     }
     return "redirect:/admin/projects";
@@ -334,6 +344,8 @@ public class AuthController {
       Project project,
       List<ProjectMember> members,
       long developerCount,
-      long testerCount) {
+      long testerCount,
+      long totalIssueCount,
+      long unresolvedIssueCount) {
   }
 }
