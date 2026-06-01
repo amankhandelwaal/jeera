@@ -1,5 +1,11 @@
 # Jeera
 
+[![CI](https://github.com/amankhandelwaal/jeera/actions/workflows/ci.yml/badge.svg)](https://github.com/amankhandelwaal/jeera/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/amankhandelwaal/jeera/actions/workflows/codeql.yml/badge.svg)](https://github.com/amankhandelwaal/jeera/actions/workflows/codeql.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Java 17](https://img.shields.io/badge/Java-17-orange.svg)
+![Spring Boot 4.0](https://img.shields.io/badge/Spring%20Boot-4.0-brightgreen.svg)
+
 Jeera is a role-based bug tracking and workflow management application for engineering teams.
 It is built as a server-rendered web app using Spring Boot, Thymeleaf, and PostgreSQL.
 
