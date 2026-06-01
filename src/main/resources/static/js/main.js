@@ -1,6 +1,44 @@
 (function () {
 	const THEME_KEY = "jeera-theme-preference";
 
+	// --- CSRF helper -----------------------------------------------------------
+	// CSRF protection is enabled (Spring Security default). Server-rendered forms
+	// get the hidden token automatically via Thymeleaf, but `fetch` calls must
+	// send it explicitly. Use jeeraFetch(url, options) for any state-changing
+	// AJAX request (POST/PUT/PATCH/DELETE) introduced in later milestones.
+	function readCsrf() {
+		const tokenMeta = document.querySelector('meta[name="_csrf"]');
+		const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+		const token = tokenMeta ? tokenMeta.getAttribute("content") : "";
+		const header = headerMeta ? headerMeta.getAttribute("content") : "";
+		if (!token || !header) {
+			return null;
+		}
+		return { token: token, header: header };
+	}
+
+	const SAFE_METHODS = ["GET", "HEAD", "OPTIONS", "TRACE"];
+
+	window.jeeraFetch = function (url, options) {
+		const opts = options ? Object.assign({}, options) : {};
+		const method = (opts.method || "GET").toUpperCase();
+		const headers = new Headers(opts.headers || {});
+		headers.set("X-Requested-With", "XMLHttpRequest");
+
+		if (SAFE_METHODS.indexOf(method) === -1) {
+			const csrf = readCsrf();
+			if (csrf) {
+				headers.set(csrf.header, csrf.token);
+			}
+		}
+
+		opts.headers = headers;
+		if (opts.credentials === undefined) {
+			opts.credentials = "same-origin";
+		}
+		return fetch(url, opts);
+	};
+
 	function resolveTheme(preferredTheme) {
 		if (preferredTheme === "dark" || preferredTheme === "light") {
 			return preferredTheme;

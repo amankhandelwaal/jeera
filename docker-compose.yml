@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Local development stack: Postgres + the Jeera app.
+#   cp .env.example .env   # then `docker compose up --build`
+#   App:  http://localhost:8080   (seed admin: admin / admin123)
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: jeera_db
+      POSTGRES_USER: ${DB_USERNAME:-jeera_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-yourpassword}
+    ports:
+      - "5432:5432"
+    volumes:
+      - jeera-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-jeera_user} -d jeera_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      DB_URL: jdbc:postgresql://db:5432/jeera_db
+      DB_USERNAME: ${DB_USERNAME:-jeera_user}
+      DB_PASSWORD: ${DB_PASSWORD:-yourpassword}
+    ports:
+      - "${PORT:-8080}:8080"
+
+volumes:
+  jeera-pgdata:

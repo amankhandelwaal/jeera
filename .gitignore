@@ -19,8 +19,9 @@ target/
 out/
 
 # --- Maven Wrapper ---
+# NOTE: .mvn/wrapper/maven-wrapper.properties is intentionally tracked so that
+# `./mvnw` works in CI and on fresh clones. Only the downloaded jar is ignored.
 .mvn/wrapper/maven-wrapper.jar
-.mvn/wrapper/maven-wrapper.properties
 
 # --- OS Generated Files ---
 .DS_Store
