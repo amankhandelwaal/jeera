@@ -1,2 +1,10 @@
-/mvnw text eol=lf
+# Normalize all text files to LF in the repo and on checkout (matches .editorconfig).
+# Git auto-detects binary files and leaves them untouched.
+* text=auto eol=lf
+
+# Windows batch scripts must keep CRLF.
 *.cmd text eol=crlf
+*.bat text eol=crlf
+
+# The Maven wrapper shell script is invoked by /bin/sh on the Linux CI runner.
+/mvnw text eol=lf

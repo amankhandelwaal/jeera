@@ -256,6 +256,9 @@
 				<artifactId>spotless-maven-plugin</artifactId>
 				<version>${spotless.version}</version>
 				<configuration>
+					<!-- Enforce LF regardless of OS/git config so a Windows checkout and
+					     the Linux CI runner agree on line endings. -->
+					<lineEndings>UNIX</lineEndings>
 					<java>
 						<googleJavaFormat/>
 						<removeUnusedImports/>
