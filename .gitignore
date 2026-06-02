@@ -27,6 +27,10 @@ out/
 .DS_Store
 Thumbs.db
 
+# --- JVM fatal-error / replay logs (generated locally under memory pressure) ---
+hs_err_pid*.log
+replay_pid*.log
+
 # --- Other IDEs (Optional but good for team portability) ---
 # VS Code
 .vscode/

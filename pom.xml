@@ -37,6 +37,9 @@
 		<java.version>17</java.version>
 		<jacoco.version>0.8.13</jacoco.version>
 		<testcontainers.version>1.21.3</testcontainers.version>
+		<spotless.version>2.43.0</spotless.version>
+		<spotbugs.version>4.8.6.4</spotbugs.version>
+		<jacoco.min.coverage>0.10</jacoco.min.coverage>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -186,8 +189,10 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- Code coverage. Report-only for now; a coverage gate is added once
-			     the first CI run establishes a real baseline. -->
+			<!-- Code coverage. `report` emits the HTML/CSV report; `check` enforces a
+			     regression floor (${jacoco.min.coverage}) so coverage can't silently
+			     collapse. The floor is deliberately conservative (well under the real
+			     baseline) and meant to be ratcheted up as the test suite grows. -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
@@ -206,6 +211,27 @@
 							<goal>report</goal>
 						</goals>
 					</execution>
+					<execution>
+						<id>jacoco-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<element>BUNDLE</element>
+									<limits>
+										<limit>
+											<counter>INSTRUCTION</counter>
+											<value>COVEREDRATIO</value>
+											<minimum>${jacoco.min.coverage}</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
 				</executions>
 			</plugin>
 			<!-- Integration tests (*IT.java) run in the verify phase, separate from
@@ -218,6 +244,53 @@
 						<goals>
 							<goal>integration-test</goal>
 							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Formatting gate. The codebase is written in google-java-format
+			     (2-space, sorted imports); `spotless:check` fails the build on any
+			     drift, `spotless:apply` auto-fixes. Bound to verify so CI enforces it. -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless.version}</version>
+				<configuration>
+					<java>
+						<googleJavaFormat/>
+						<removeUnusedImports/>
+					</java>
+				</configuration>
+				<executions>
+					<execution>
+						<id>spotless-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- Static analysis gate. Analyzes compiled bytecode for real bug
+			     patterns; noisy Spring/Lombok categories are silenced in
+			     config/spotbugs-exclude.xml. `spotbugs:check` fails the build on
+			     remaining findings; bound to verify so CI enforces it. -->
+			<plugin>
+				<groupId>com.github.spotbugs</groupId>
+				<artifactId>spotbugs-maven-plugin</artifactId>
+				<version>${spotbugs.version}</version>
+				<configuration>
+					<effort>Max</effort>
+					<threshold>Medium</threshold>
+					<includeTests>false</includeTests>
+					<excludeFilterFile>config/spotbugs-exclude.xml</excludeFilterFile>
+				</configuration>
+				<executions>
+					<execution>
+						<id>spotbugs-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
 						</goals>
 					</execution>
 				</executions>

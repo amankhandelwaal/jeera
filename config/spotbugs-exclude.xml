@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  SpotBugs exclusion filter.
+
+  We intentionally silence the "exposing internal representation" family
+  (EI_EXPOSE_REP / EI_EXPOSE_REP2). In a Spring + JPA + Lombok app it fires on
+  virtually every entity getter and every constructor-injected dependency, which
+  is the intended design here, not a defect. Everything else stays enabled.
+-->
+<FindBugsFilter>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+</FindBugsFilter>
