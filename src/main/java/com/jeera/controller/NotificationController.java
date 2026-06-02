@@ -4,6 +4,7 @@ import com.jeera.model.Notification;
 import com.jeera.model.User;
 import com.jeera.service.NotificationService;
 import com.jeera.service.UserService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -13,8 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/notifications")
@@ -27,7 +26,8 @@ public class NotificationController {
   @GetMapping
   public String notifications(Authentication authentication, Model model) {
     User user = userService.findByUsername(authentication.getName());
-    List<Notification> notifications = notificationService.getNotificationsByRecipientId(user.getId());
+    List<Notification> notifications =
+        notificationService.getNotificationsByRecipientId(user.getId());
     model.addAttribute("notifications", notifications);
     return "notifications/list";
   }

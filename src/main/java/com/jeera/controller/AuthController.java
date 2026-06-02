@@ -8,7 +8,11 @@ import com.jeera.model.enums.UserRole;
 import com.jeera.service.ProjectService;
 import com.jeera.service.UserService;
 import jakarta.validation.Valid;
+import java.util.Comparator;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -17,17 +21,16 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.Comparator;
-import java.util.List;
 
 @Controller
 @RequestMapping("/")
 @RequiredArgsConstructor
 public class AuthController {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
   private final UserService userService;
   private final ProjectService projectService;
@@ -114,19 +117,36 @@ public class AuthController {
 
   private void populateAdminProjectsModel(Model model, Long ownerId) {
 
-    List<ProjectOverview> projectOverviews = projectService.getAllProjects().stream()
-        .filter(
-            project -> ownerId == null || (project.getOwner() != null && project.getOwner().getId().equals(ownerId)))
-        .sorted(Comparator.comparing(Project::getCreatedAt).reversed())
-        .map(project -> {
-          List<ProjectMember> members = projectService.getProjectMembers(project.getId()).stream()
-              .sorted(Comparator.comparing(pm -> pm.getUser().getUsername(), String.CASE_INSENSITIVE_ORDER))
-              .toList();
-          long developers = members.stream().filter(pm -> pm.getProjectRole() == ProjectRole.DEVELOPER).count();
-          long testers = members.stream().filter(pm -> pm.getProjectRole() == ProjectRole.TESTER).count();
-          return new ProjectOverview(project, members, developers, testers);
-        })
-        .toList();
+    List<ProjectOverview> projectOverviews =
+        projectService.getAllProjects().stream()
+            .filter(
+                project ->
+                    ownerId == null
+                        || (project.getOwner() != null
+                            && project.getOwner().getId().equals(ownerId)))
+            .sorted(Comparator.comparing(Project::getCreatedAt).reversed())
+            .map(
+                project -> {
+                  List<ProjectMember> members =
+                      projectService.getProjectMembers(project.getId()).stream()
+                          .sorted(
+                              Comparator.comparing(
+                                  pm -> pm.getUser().getUsername(), String.CASE_INSENSITIVE_ORDER))
+                          .toList();
+                  long developers =
+                      members.stream()
+                          .filter(pm -> pm.getProjectRole() == ProjectRole.DEVELOPER)
+                          .count();
+                  long testers =
+                      members.stream()
+                          .filter(pm -> pm.getProjectRole() == ProjectRole.TESTER)
+                          .count();
+                  long totalIssues = projectService.getTotalIssueCount(project.getId());
+                  long unresolvedIssues = projectService.getUnresolvedIssueCount(project.getId());
+                  return new ProjectOverview(
+                      project, members, developers, testers, totalIssues, unresolvedIssues);
+                })
+            .toList();
 
     model.addAttribute("projectOverviews", projectOverviews);
     model.addAttribute("ownerFilterId", ownerId);
@@ -213,9 +233,7 @@ public class AuthController {
 
   @PostMapping("admin/users/{id}/deactivate")
   public String deactivateUser(
-      @PathVariable Long id,
-      Authentication authentication,
-      RedirectAttributes redirectAttributes) {
+      @PathVariable Long id, Authentication authentication, RedirectAttributes redirectAttributes) {
 
     User actor = requireActor(authentication);
     ensureAdmin(actor);
@@ -302,6 +320,9 @@ public class AuthController {
   @PostMapping("admin/projects/{id}/delete")
   public String deleteProjectByAdmin(
       @PathVariable Long id,
+      @RequestParam(defaultValue = "false") boolean forceDelete,
+      @RequestParam(required = false) String confirmProjectName,
+      @RequestParam(required = false) String deleteReason,
       Authentication authentication,
       RedirectAttributes redirectAttributes) {
 
@@ -309,9 +330,11 @@ public class AuthController {
     ensureAdmin(actor);
 
     try {
-      projectService.deleteProjectByAdmin(id, actor.getId());
+      projectService.deleteProjectByAdmin(
+          id, actor.getId(), forceDelete, confirmProjectName, deleteReason);
       redirectAttributes.addFlashAttribute("successMessage", "Project deleted successfully");
-    } catch (IllegalStateException ex) {
+    } catch (RuntimeException ex) {
+      LOGGER.error("Failed to delete project {} by admin {}", id, actor.getUsername(), ex);
       redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
     }
     return "redirect:/admin/projects";
@@ -334,6 +357,7 @@ public class AuthController {
       Project project,
       List<ProjectMember> members,
       long developerCount,
-      long testerCount) {
-  }
+      long testerCount,
+      long totalIssueCount,
+      long unresolvedIssueCount) {}
 }

@@ -2,11 +2,10 @@ package com.jeera.model;
 
 import com.jeera.model.enums.UserRole;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Entity
 @Table(name = "users")

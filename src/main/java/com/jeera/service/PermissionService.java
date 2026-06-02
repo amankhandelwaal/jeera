@@ -9,12 +9,11 @@ import com.jeera.repository.ProjectMemberRepository;
 import com.jeera.repository.ProjectRepository;
 import com.jeera.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
@@ -29,24 +28,38 @@ public class PermissionService {
   }
 
   public boolean hasProjectRole(Long userId, Long projectId, ProjectRole... allowedRoles) {
-    userRepository.findById(userId)
+    userRepository
+        .findById(userId)
         .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-    projectRepository.findById(projectId)
+    projectRepository
+        .findById(projectId)
         .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
 
     Set<ProjectRole> allowed = Arrays.stream(allowedRoles).collect(Collectors.toSet());
-    ProjectMember membership = projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
-        .orElseThrow(() -> new EntityNotFoundException(
-            "Project membership not found for user " + userId + " in project " + projectId));
+    ProjectMember membership =
+        projectMemberRepository
+            .findByProjectIdAndUserId(projectId, userId)
+            .orElseThrow(
+                () ->
+                    new EntityNotFoundException(
+                        "Project membership not found for user "
+                            + userId
+                            + " in project "
+                            + projectId));
 
     return allowed.contains(membership.getProjectRole());
   }
 
   public boolean canViewProject(Long userId, Long projectId) {
-    User user = userRepository.findById(userId)
-        .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
-    Project project = projectRepository.findById(projectId)
-        .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
+    User user =
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
+    Project project =
+        projectRepository
+            .findById(projectId)
+            .orElseThrow(
+                () -> new EntityNotFoundException("Project not found with id: " + projectId));
 
     if (isSystemAdmin(user)) {
       return true;

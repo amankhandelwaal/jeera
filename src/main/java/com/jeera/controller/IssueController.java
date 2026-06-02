@@ -15,6 +15,7 @@ import com.jeera.service.ProjectService;
 import com.jeera.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -28,8 +29,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/projects/{projectId}/issues")
@@ -45,9 +44,7 @@ public class IssueController {
 
   @GetMapping("/new")
   public String createIssueForm(
-      @PathVariable Long projectId,
-      Authentication authentication,
-      Model model) {
+      @PathVariable Long projectId, Authentication authentication, Model model) {
     User actor = requireActor(authentication);
     ensureProjectMember(actor, projectId);
 
@@ -74,19 +71,21 @@ public class IssueController {
       return "issues/create";
     }
 
-    Project project = projectService.getAccessibleProjects(actor.getId())
-        .stream()
-        .filter(p -> p.getId().equals(projectId))
-        .findFirst()
-        .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
+    Project project =
+        projectService.getAccessibleProjects(actor.getId()).stream()
+            .filter(p -> p.getId().equals(projectId))
+            .findFirst()
+            .orElseThrow(
+                () -> new EntityNotFoundException("Project not found with id: " + projectId));
 
-    Issue issue = Issue.builder()
-        .project(project)
-        .title(createIssueDto.getTitle())
-        .description(createIssueDto.getDescription())
-        .type(createIssueDto.getType())
-        .priority(createIssueDto.getPriority())
-        .build();
+    Issue issue =
+        Issue.builder()
+            .project(project)
+            .title(createIssueDto.getTitle())
+            .description(createIssueDto.getDescription())
+            .type(createIssueDto.getType())
+            .priority(createIssueDto.getPriority())
+            .build();
 
     issueService.createIssue(issue, actor.getId());
     redirectAttributes.addFlashAttribute("successMessage", "Issue created successfully");
@@ -105,16 +104,17 @@ public class IssueController {
     Issue issue = issueService.findById(issueId);
     ensureIssueBelongsToProject(issue, projectId);
 
-    boolean isProjectOwner = issue.getProject() != null
-        && issue.getProject().getOwner() != null
-        && issue.getProject().getOwner().getId().equals(actor.getId());
+    boolean isProjectOwner =
+        issue.getProject() != null
+            && issue.getProject().getOwner() != null
+            && issue.getProject().getOwner().getId().equals(actor.getId());
     boolean isAdmin = actor.getSystemRole() == UserRole.ADMIN;
     boolean canManageIssue = isProjectOwner || isAdmin;
-    boolean canUpdateAsAssignee = issue.getAssignee() != null && issue.getAssignee().getId().equals(actor.getId());
+    boolean canUpdateAsAssignee =
+        issue.getAssignee() != null && issue.getAssignee().getId().equals(actor.getId());
     boolean canVerifyAsTester = hasProjectRole(actor, projectId, ProjectRole.TESTER);
-    List<User> assignableDevelopers = canManageIssue
-        ? issueService.getAssignableDevelopers(projectId)
-        : List.of();
+    List<User> assignableDevelopers =
+        canManageIssue ? issueService.getAssignableDevelopers(projectId) : List.of();
 
     model.addAttribute("issue", issue);
     model.addAttribute("comments", commentService.getIssueComments(issueId));

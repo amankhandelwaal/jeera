@@ -1,6 +1,44 @@
 (function () {
 	const THEME_KEY = "jeera-theme-preference";
 
+	// --- CSRF helper -----------------------------------------------------------
+	// CSRF protection is enabled (Spring Security default). Server-rendered forms
+	// get the hidden token automatically via Thymeleaf, but `fetch` calls must
+	// send it explicitly. Use jeeraFetch(url, options) for any state-changing
+	// AJAX request (POST/PUT/PATCH/DELETE) introduced in later milestones.
+	function readCsrf() {
+		const tokenMeta = document.querySelector('meta[name="_csrf"]');
+		const headerMeta = document.querySelector('meta[name="_csrf_header"]');
+		const token = tokenMeta ? tokenMeta.getAttribute("content") : "";
+		const header = headerMeta ? headerMeta.getAttribute("content") : "";
+		if (!token || !header) {
+			return null;
+		}
+		return { token: token, header: header };
+	}
+
+	const SAFE_METHODS = ["GET", "HEAD", "OPTIONS", "TRACE"];
+
+	window.jeeraFetch = function (url, options) {
+		const opts = options ? Object.assign({}, options) : {};
+		const method = (opts.method || "GET").toUpperCase();
+		const headers = new Headers(opts.headers || {});
+		headers.set("X-Requested-With", "XMLHttpRequest");
+
+		if (SAFE_METHODS.indexOf(method) === -1) {
+			const csrf = readCsrf();
+			if (csrf) {
+				headers.set(csrf.header, csrf.token);
+			}
+		}
+
+		opts.headers = headers;
+		if (opts.credentials === undefined) {
+			opts.credentials = "same-origin";
+		}
+		return fetch(url, opts);
+	};
+
 	function resolveTheme(preferredTheme) {
 		if (preferredTheme === "dark" || preferredTheme === "light") {
 			return preferredTheme;
@@ -70,6 +108,79 @@
 		window.setInterval(fetchUnreadCount, 30000);
 	}
 
+	function initAdminProjectDeleteModal() {
+		const modal = document.getElementById("adminProjectDeleteModal");
+		if (!modal) {
+			return;
+		}
+
+		const nameSlot = document.getElementById("deleteModalProjectName");
+		const safeBlock = document.getElementById("deleteModalSafeBlock");
+		const forceBlock = document.getElementById("deleteModalForceBlock");
+		const impactText = document.getElementById("deleteModalImpactText");
+		const confirmInput = document.getElementById("deleteModalConfirmProjectName");
+		const reasonInput = document.getElementById("deleteModalReason");
+		const forceFlag = document.getElementById("deleteModalForceFlag");
+		const form = document.getElementById("adminProjectDeleteModalForm");
+		const submitBtn = document.getElementById("deleteModalSubmitBtn");
+		const baseAction = form ? (form.getAttribute("data-base-action") || form.getAttribute("action") || "") : "";
+
+		modal.addEventListener("show.bs.modal", function (event) {
+			if (!form) {
+				return;
+			}
+
+			const trigger = event.relatedTarget;
+			if (!trigger) {
+				return;
+			}
+
+			const projectId = String(trigger.getAttribute("data-project-id") || "");
+			const projectName = String(trigger.getAttribute("data-project-name") || "project");
+			const totalIssues = Number(trigger.getAttribute("data-total-issues") || "0");
+			const unresolvedIssues = Number(trigger.getAttribute("data-unresolved-issues") || "0");
+			const requiresForceDelete = unresolvedIssues > 0;
+
+			nameSlot.textContent = projectName;
+
+			form.setAttribute("action", baseAction.replace(/\/0\/delete$/, "/" + projectId + "/delete"));
+
+			forceFlag.value = requiresForceDelete ? "true" : "false";
+
+			safeBlock.classList.toggle("d-none", requiresForceDelete);
+			forceBlock.classList.toggle("d-none", !requiresForceDelete);
+
+			confirmInput.required = requiresForceDelete;
+			reasonInput.required = requiresForceDelete;
+
+			if (requiresForceDelete) {
+				impactText.textContent =
+					"Force delete will permanently remove " + totalIssues
+					+ " issue(s), comments, activity logs, notifications, and memberships.";
+				submitBtn.textContent = "Force Delete Project";
+				submitBtn.classList.remove("btn-outline-danger");
+				submitBtn.classList.add("btn-danger");
+			} else {
+				confirmInput.value = "";
+				reasonInput.value = "";
+				submitBtn.textContent = "Delete Project";
+				submitBtn.classList.remove("btn-outline-danger");
+				submitBtn.classList.add("btn-danger");
+			}
+		});
+
+		modal.addEventListener("hidden.bs.modal", function () {
+			if (!form) {
+				return;
+			}
+			form.setAttribute("action", baseAction);
+			confirmInput.value = "";
+			reasonInput.value = "";
+			forceFlag.value = "false";
+		});
+	}
+
 	initTheme();
 	initUnreadPolling();
+	initAdminProjectDeleteModal();
 })();

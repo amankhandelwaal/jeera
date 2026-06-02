@@ -2,10 +2,9 @@ package com.jeera.repository;
 
 import com.jeera.model.ProjectMember;
 import com.jeera.model.enums.ProjectRole;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProjectMemberRepository extends JpaRepository<ProjectMember, Long> {
 

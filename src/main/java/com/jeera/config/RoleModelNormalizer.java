@@ -3,11 +3,10 @@ package com.jeera.config;
 import com.jeera.model.User;
 import com.jeera.model.enums.UserRole;
 import com.jeera.repository.UserRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor

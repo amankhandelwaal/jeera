@@ -193,6 +193,12 @@
               <span class="badge text-bg-light" th:text="${'Total Members: ' + #lists.size(overview.members)}">Total Members</span>
               <span class="badge badge-role-dev" th:text="${'Developers: ' + overview.developerCount}">Developers</span>
               <span class="badge badge-role-tester" th:text="${'Testers: ' + overview.testerCount}">Testers</span>
+              <span class="badge text-bg-light" th:text="${'Issues: ' + overview.totalIssueCount}">Issues</span>
+              <span class="badge"
+                    th:classappend="${overview.unresolvedIssueCount > 0} ? ' text-bg-warning' : ' text-bg-success'"
+                    th:text="${'Unresolved: ' + overview.unresolvedIssueCount}">
+                Unresolved
+              </span>
             </div>
 
             <div th:if="${#lists.isEmpty(overview.members)}" class="small text-secondary">
@@ -207,10 +213,76 @@
               </span>
             </div>
 
-            <form class="mt-3" th:action="@{/admin/projects/{id}/delete(id=${overview.project.id})}" method="post"
-                  onsubmit="return confirm('Delete this project? This cannot be undone.');">
-              <button type="submit" class="btn btn-sm btn-outline-danger">Delete Project</button>
-            </form>
+            <div class="mt-3">
+              <button
+                  type="button"
+                  class="btn btn-sm btn-danger js-admin-delete-btn"
+                  data-bs-toggle="modal"
+                  data-bs-target="#adminProjectDeleteModal"
+                  th:attr="
+                    data-project-id=${overview.project.id},
+                    data-project-name=${overview.project.name},
+                    data-total-issues=${overview.totalIssueCount},
+                    data-unresolved-issues=${overview.unresolvedIssueCount}">
+                Delete Project
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" id="adminProjectDeleteModal" tabindex="-1" aria-labelledby="adminProjectDeleteModalLabel"
+           aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3 class="modal-title h5 mb-0" id="adminProjectDeleteModalLabel">Delete Project</h3>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <p class="mb-2">
+                You are deleting <span class="fw-semibold" id="deleteModalProjectName">project</span>.
+              </p>
+
+              <div id="deleteModalSafeBlock">
+                <p class="small text-secondary mb-0">
+                  This project has no unresolved issues and can be deleted now.
+                </p>
+              </div>
+
+              <div id="deleteModalForceBlock" class="d-none">
+                <p class="small text-warning-emphasis mb-2">
+                  Normal delete is blocked because this project has unresolved issues.
+                </p>
+                <p class="small text-secondary mb-3" id="deleteModalImpactText">
+                  Force delete impact summary.
+                </p>
+                <div class="mb-3">
+                  <label class="form-label small mb-1" for="deleteModalConfirmProjectName">Type project name to confirm</label>
+                      <input id="deleteModalConfirmProjectName" name="confirmProjectName" class="form-control form-control-sm"
+                        form="adminProjectDeleteModalForm">
+                </div>
+                <div class="mb-0">
+                  <label class="form-label small mb-1" for="deleteModalReason">Reason (required for audit)</label>
+                      <input id="deleteModalReason" name="deleteReason" class="form-control form-control-sm"
+                        form="adminProjectDeleteModalForm"
+                         placeholder="Reason for force delete">
+                </div>
+              </div>
+
+                  <input type="hidden" id="deleteModalForceFlag" name="forceDelete" value="false"
+                    form="adminProjectDeleteModalForm">
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+              <form id="adminProjectDeleteModalForm"
+                    th:action="@{/admin/projects/0/delete}"
+                    th:attr="data-base-action=@{/admin/projects/0/delete}"
+                    method="post"
+                    class="mb-0">
+                <button type="submit" class="btn btn-sm btn-danger" id="deleteModalSubmitBtn">Delete Project</button>
+              </form>
+            </div>
           </div>
         </div>
       </div>

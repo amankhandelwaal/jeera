@@ -12,6 +12,7 @@ import com.jeera.service.ProjectService;
 import com.jeera.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -24,8 +25,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-
 @Controller
 @RequestMapping("/projects")
 @RequiredArgsConstructor
@@ -36,7 +35,7 @@ public class ProjectController {
   private final IssueService issueService;
   private final PermissionService permissionService;
 
-  @GetMapping({ "", "/" })
+  @GetMapping({"", "/"})
   public String projects(Authentication authentication, Model model) {
     User actor = requireActor(authentication);
 
@@ -92,11 +91,21 @@ public class ProjectController {
     List<Issue> issues = issueService.findByProjectId(id);
     long open = issues.stream().filter(i -> i.getStatus() == IssueStatus.OPEN).count();
     long unassigned = issues.stream().filter(i -> i.getAssignee() == null).count();
-    long inProgress = issues.stream().filter(i -> i.getStatus() == IssueStatus.ASSIGNED
-        || i.getStatus() == IssueStatus.IN_ANALYSIS
-        || i.getStatus() == IssueStatus.IN_PROGRESS).count();
-    long pendingVerify = issues.stream().filter(i -> i.getStatus() == IssueStatus.RESOLVED
-        || i.getStatus() == IssueStatus.UNDER_VERIFICATION).count();
+    long inProgress =
+        issues.stream()
+            .filter(
+                i ->
+                    i.getStatus() == IssueStatus.ASSIGNED
+                        || i.getStatus() == IssueStatus.IN_ANALYSIS
+                        || i.getStatus() == IssueStatus.IN_PROGRESS)
+            .count();
+    long pendingVerify =
+        issues.stream()
+            .filter(
+                i ->
+                    i.getStatus() == IssueStatus.RESOLVED
+                        || i.getStatus() == IssueStatus.UNDER_VERIFICATION)
+            .count();
     long closed = issues.stream().filter(i -> i.getStatus() == IssueStatus.CLOSED).count();
 
     model.addAttribute("project", project);
@@ -118,7 +127,8 @@ public class ProjectController {
     }
 
     Project project = resolveAccessibleProject(actor, id);
-    boolean canManageMembers = isProjectOwner(actor, project) || actor.getSystemRole() == UserRole.ADMIN;
+    boolean canManageMembers =
+        isProjectOwner(actor, project) || actor.getSystemRole() == UserRole.ADMIN;
 
     model.addAttribute("project", project);
     model.addAttribute("members", project.getMembers());
@@ -167,8 +177,15 @@ public class ProjectController {
   }
 
   private Project resolveAccessibleProject(User actor, Long projectId) {
-    return projectService.getAccessibleProjects(actor.getId())
-        .stream()
+    if (actor.getSystemRole() == UserRole.ADMIN) {
+      return projectService.getAllProjects().stream()
+          .filter(project -> project.getId().equals(projectId))
+          .findFirst()
+          .orElseThrow(
+              () -> new EntityNotFoundException("Project not found with id: " + projectId));
+    }
+
+    return projectService.getAccessibleProjects(actor.getId()).stream()
         .filter(project -> project.getId().equals(projectId))
         .findFirst()
         .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + projectId));
@@ -204,5 +221,4 @@ public class ProjectController {
   private boolean isProjectOwner(User actor, Project project) {
     return project.getOwner() != null && project.getOwner().getId().equals(actor.getId());
   }
-
 }
