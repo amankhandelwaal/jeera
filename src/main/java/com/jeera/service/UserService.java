@@ -1,23 +1,22 @@
 package com.jeera.service;
 
-import com.jeera.model.User;
-import com.jeera.model.Project;
 import com.jeera.model.Issue;
+import com.jeera.model.Project;
+import com.jeera.model.User;
 import com.jeera.model.enums.IssueStatus;
 import com.jeera.model.enums.UserRole;
 import com.jeera.repository.IssueRepository;
 import com.jeera.repository.ProjectRepository;
 import com.jeera.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
+import java.util.EnumSet;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.EnumSet;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -29,14 +28,15 @@ public class UserService {
   private final NotificationService notificationService;
   private final PasswordEncoder passwordEncoder;
 
-  private static final EnumSet<IssueStatus> OPEN_ASSIGNMENT_STATUSES = EnumSet.of(
-      IssueStatus.REPORTED,
-      IssueStatus.OPEN,
-      IssueStatus.ASSIGNED,
-      IssueStatus.IN_ANALYSIS,
-      IssueStatus.IN_PROGRESS,
-      IssueStatus.RESOLVED,
-      IssueStatus.UNDER_VERIFICATION);
+  private static final EnumSet<IssueStatus> OPEN_ASSIGNMENT_STATUSES =
+      EnumSet.of(
+          IssueStatus.REPORTED,
+          IssueStatus.OPEN,
+          IssueStatus.ASSIGNED,
+          IssueStatus.IN_ANALYSIS,
+          IssueStatus.IN_PROGRESS,
+          IssueStatus.RESOLVED,
+          IssueStatus.UNDER_VERIFICATION);
 
   public User registerPublicUser(User user) {
     user.setSystemRole(resolveDefaultUserRole());
@@ -57,8 +57,10 @@ public class UserService {
   }
 
   public User findByUsername(String username) {
-    return userRepository.findByUsername(username)
-        .orElseThrow(() -> new EntityNotFoundException("User not found with username: " + username));
+    return userRepository
+        .findByUsername(username)
+        .orElseThrow(
+            () -> new EntityNotFoundException("User not found with username: " + username));
   }
 
   public List<Project> findOwnedProjects(Long userId) {
@@ -66,7 +68,8 @@ public class UserService {
   }
 
   public User findById(Long userId) {
-    return userRepository.findById(userId)
+    return userRepository
+        .findById(userId)
         .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + userId));
   }
 
@@ -94,7 +97,8 @@ public class UserService {
     return userRepository.save(target);
   }
 
-  public User updateProjectCreationPermission(Long targetUserId, boolean canCreateProject, Long actorUserId) {
+  public User updateProjectCreationPermission(
+      Long targetUserId, boolean canCreateProject, Long actorUserId) {
     User actor = findById(actorUserId);
     if (actor.getSystemRole() != UserRole.ADMIN) {
       throw new IllegalStateException("Only admin can update project creation permission");
@@ -127,19 +131,23 @@ public class UserService {
     List<Project> ownedProjects = projectRepository.findByOwnerId(targetUserId);
     if (!ownedProjects.isEmpty()) {
       notificationService.notifyActiveAdmins(
-          "User deactivation blocked for '" + target.getUsername()
+          "User deactivation blocked for '"
+              + target.getUsername()
               + "' because they still own projects. Action attempted by admin '"
-              + actor.getUsername() + "'.");
-      String projectSummary = ownedProjects.stream()
-          .map(project -> "#" + project.getId() + " (" + project.getName() + ")")
-          .toList()
-          .toString();
+              + actor.getUsername()
+              + "'.");
+      String projectSummary =
+          ownedProjects.stream()
+              .map(project -> "#" + project.getId() + " (" + project.getName() + ")")
+              .toList()
+              .toString();
       throw new IllegalStateException(
-          "Cannot deactivate this user. Reassign PM ownership first for projects: " + projectSummary);
+          "Cannot deactivate this user. Reassign PM ownership first for projects: "
+              + projectSummary);
     }
 
-    List<Issue> assignedOpenIssues = issueRepository.findByAssigneeIdAndStatusIn(targetUserId,
-        OPEN_ASSIGNMENT_STATUSES);
+    List<Issue> assignedOpenIssues =
+        issueRepository.findByAssigneeIdAndStatusIn(targetUserId, OPEN_ASSIGNMENT_STATUSES);
     for (Issue issue : assignedOpenIssues) {
       issue.setAssignee(null);
       issue.setUpdatedAt(LocalDateTime.now());
@@ -150,7 +158,11 @@ public class UserService {
     User saved = userRepository.save(target);
 
     notificationService.notifyActiveAdmins(
-        "User '" + saved.getUsername() + "' was deactivated by admin '" + actor.getUsername() + "'.");
+        "User '"
+            + saved.getUsername()
+            + "' was deactivated by admin '"
+            + actor.getUsername()
+            + "'.");
     return saved;
   }
 
@@ -168,17 +180,21 @@ public class UserService {
       throw new IllegalStateException("Email is required");
     }
 
-    userRepository.findByUsername(normalizedUsername)
+    userRepository
+        .findByUsername(normalizedUsername)
         .filter(existing -> !existing.getId().equals(user.getId()))
-        .ifPresent(existing -> {
-          throw new IllegalStateException("Username is already taken");
-        });
+        .ifPresent(
+            existing -> {
+              throw new IllegalStateException("Username is already taken");
+            });
 
-    userRepository.findByEmail(normalizedEmail)
+    userRepository
+        .findByEmail(normalizedEmail)
         .filter(existing -> !existing.getId().equals(user.getId()))
-        .ifPresent(existing -> {
-          throw new IllegalStateException("Email is already in use");
-        });
+        .ifPresent(
+            existing -> {
+              throw new IllegalStateException("Email is already in use");
+            });
 
     user.setUsername(normalizedUsername);
     user.setEmail(normalizedEmail);

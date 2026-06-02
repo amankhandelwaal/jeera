@@ -2,14 +2,17 @@ package com.jeera.model;
 
 import com.jeera.model.enums.ProjectRole;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
-@Table(name = "project_members", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_project_member_project_user", columnNames = { "project_id", "user_id" })
-})
+@Table(
+    name = "project_members",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_project_member_project_user",
+          columnNames = {"project_id", "user_id"})
+    })
 @Data
 @Builder
 @NoArgsConstructor

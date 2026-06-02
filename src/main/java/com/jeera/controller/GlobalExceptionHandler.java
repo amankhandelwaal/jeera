@@ -15,7 +15,8 @@ public class GlobalExceptionHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
   @ExceptionHandler(EntityNotFoundException.class)
-  public String handleEntityNotFound(EntityNotFoundException ex, Model model, HttpServletResponse response) {
+  public String handleEntityNotFound(
+      EntityNotFoundException ex, Model model, HttpServletResponse response) {
     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
     model.addAttribute("errorTitle", "Resource Not Found");
     model.addAttribute("errorMessage", ex.getMessage());
@@ -23,7 +24,8 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(AccessDeniedException.class)
-  public String handleAccessDenied(AccessDeniedException ex, Model model, HttpServletResponse response) {
+  public String handleAccessDenied(
+      AccessDeniedException ex, Model model, HttpServletResponse response) {
     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
     model.addAttribute("errorTitle", "Access Denied");
     model.addAttribute("errorMessage", "You do not have permission to perform this action.");
@@ -31,7 +33,8 @@ public class GlobalExceptionHandler {
   }
 
   @ExceptionHandler(IllegalStateException.class)
-  public String handleIllegalState(IllegalStateException ex, Model model, HttpServletResponse response) {
+  public String handleIllegalState(
+      IllegalStateException ex, Model model, HttpServletResponse response) {
     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
     model.addAttribute("errorTitle", "Invalid Operation");
     model.addAttribute("errorMessage", ex.getMessage());

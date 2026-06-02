@@ -20,10 +20,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
 /**
- * Verifies the custom IssueRepository queries and the project-scoped issue-number
- * unique constraint against a real PostgreSQL instance. Each test seeds its own
- * project/user (unique names) so assertions are isolated without transactional
- * rollback.
+ * Verifies the custom IssueRepository queries and the project-scoped issue-number unique constraint
+ * against a real PostgreSQL instance. Each test seeds its own project/user (unique names) so
+ * assertions are isolated without transactional rollback.
  */
 @SpringBootTest
 class IssueRepositoryIT extends AbstractPostgresIT {
@@ -38,19 +37,33 @@ class IssueRepositoryIT extends AbstractPostgresIT {
   @BeforeEach
   void seed() {
     String suffix = String.valueOf(System.nanoTime());
-    reporter = userRepository.save(User.builder()
-        .username("owner_" + suffix).email("owner_" + suffix + "@example.com").passwordHash("x")
-        .systemRole(UserRole.USER).createdAt(LocalDateTime.now()).build());
-    project = projectRepository.save(Project.builder()
-        .name("Proj").owner(reporter).createdAt(LocalDateTime.now()).build());
+    reporter =
+        userRepository.save(
+            User.builder()
+                .username("owner_" + suffix)
+                .email("owner_" + suffix + "@example.com")
+                .passwordHash("x")
+                .systemRole(UserRole.USER)
+                .createdAt(LocalDateTime.now())
+                .build());
+    project =
+        projectRepository.save(
+            Project.builder().name("Proj").owner(reporter).createdAt(LocalDateTime.now()).build());
   }
 
   private Issue saveIssue(int number) {
-    return issueRepository.save(Issue.builder()
-        .project(project).issueNumber(number).title("t" + number)
-        .type(IssueType.BUG).priority(IssuePriority.MEDIUM).status(IssueStatus.REPORTED)
-        .reporter(reporter).createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
-        .build());
+    return issueRepository.save(
+        Issue.builder()
+            .project(project)
+            .issueNumber(number)
+            .title("t" + number)
+            .type(IssueType.BUG)
+            .priority(IssuePriority.MEDIUM)
+            .status(IssueStatus.REPORTED)
+            .reporter(reporter)
+            .createdAt(LocalDateTime.now())
+            .updatedAt(LocalDateTime.now())
+            .build());
   }
 
   @Test
@@ -70,7 +83,8 @@ class IssueRepositoryIT extends AbstractPostgresIT {
   void findByProjectIdAndIssueNumber_resolvesIssue() {
     Issue saved = saveIssue(7);
     assertTrue(issueRepository.findByProjectIdAndIssueNumber(project.getId(), 7).isPresent());
-    assertEquals(saved.getId(),
+    assertEquals(
+        saved.getId(),
         issueRepository.findByProjectIdAndIssueNumber(project.getId(), 7).orElseThrow().getId());
   }
 

@@ -18,7 +18,8 @@ public class UserSchemaNormalizer implements CommandLineRunner {
   @Override
   public void run(String... args) {
     try {
-      jdbcTemplate.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE");
+      jdbcTemplate.execute(
+          "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE");
       jdbcTemplate.execute("UPDATE users SET is_active = TRUE WHERE is_active IS NULL");
       jdbcTemplate.execute("ALTER TABLE users ALTER COLUMN is_active SET NOT NULL");
     } catch (Exception ex) {

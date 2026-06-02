@@ -15,14 +15,13 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Translates issue domain events into user notifications. This decouples
- * {@link com.jeera.service.IssueService} from {@link NotificationService}: the
- * service publishes events, this listener decides who to notify.
+ * Translates issue domain events into user notifications. This decouples {@link
+ * com.jeera.service.IssueService} from {@link NotificationService}: the service publishes events,
+ * this listener decides who to notify.
  *
- * <p>Listeners run synchronously within the originating transaction, preserving
- * the previous behaviour where notifications were written alongside the issue
- * change. (A later milestone may move these to {@code AFTER_COMMIT} once the
- * test suite can cover the changed failure semantics.)
+ * <p>Listeners run synchronously within the originating transaction, preserving the previous
+ * behaviour where notifications were written alongside the issue change. (A later milestone may
+ * move these to {@code AFTER_COMMIT} once the test suite can cover the changed failure semantics.)
  */
 @Component
 @RequiredArgsConstructor
@@ -40,7 +39,9 @@ public class NotificationEventListener {
     }
     User reporter = issue.getReporter();
     User projectOwner = issue.getProject() != null ? issue.getProject().getOwner() : null;
-    if (projectOwner != null && reporter != null && !projectOwner.getId().equals(reporter.getId())) {
+    if (projectOwner != null
+        && reporter != null
+        && !projectOwner.getId().equals(reporter.getId())) {
       notificationService.createNotification(
           projectOwner,
           "New issue #" + issue.getIssueNumber() + " was created in your project",
@@ -59,9 +60,7 @@ public class NotificationEventListener {
       return;
     }
     notificationService.createNotification(
-        assignee,
-        "You were assigned issue #" + issue.getIssueNumber(),
-        issue);
+        assignee, "You were assigned issue #" + issue.getIssueNumber(), issue);
   }
 
   @EventListener
@@ -76,7 +75,8 @@ public class NotificationEventListener {
 
   // --- moved verbatim from the former IssueService.notify* methods -----------
 
-  private void notifyStatusChange(Issue issue, IssueStatus oldStatus, IssueStatus newStatus, User actor) {
+  private void notifyStatusChange(
+      Issue issue, IssueStatus oldStatus, IssueStatus newStatus, User actor) {
     Set<Long> notifiedUserIds = new LinkedHashSet<>();
     notifyProjectOwnerForExternalAction(issue, oldStatus, newStatus, actor, notifiedUserIds);
 
@@ -116,8 +116,12 @@ public class NotificationEventListener {
     }
   }
 
-  private void notifyProjectOwnerForExternalAction(Issue issue, IssueStatus oldStatus, IssueStatus newStatus,
-      User actor, Set<Long> notifiedUserIds) {
+  private void notifyProjectOwnerForExternalAction(
+      Issue issue,
+      IssueStatus oldStatus,
+      IssueStatus newStatus,
+      User actor,
+      Set<Long> notifiedUserIds) {
     User projectOwner = issue.getProject() != null ? issue.getProject().getOwner() : null;
     if (projectOwner == null || actor == null || projectOwner.getId().equals(actor.getId())) {
       return;
@@ -129,7 +133,8 @@ public class NotificationEventListener {
         notifiedUserIds);
   }
 
-  private void sendIssueNotification(User recipient, String message, Issue issue, Set<Long> notifiedUserIds) {
+  private void sendIssueNotification(
+      User recipient, String message, Issue issue, Set<Long> notifiedUserIds) {
     if (recipient == null || recipient.getId() == null) {
       return;
     }

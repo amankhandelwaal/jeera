@@ -27,10 +27,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 /**
- * End-to-end walk of the issue workflow through the real service stack
- * (engine + domain events + JPA persistence) against PostgreSQL: REPORTED ->
- * OPEN -> ASSIGNED -> IN_ANALYSIS -> IN_PROGRESS -> RESOLVED ->
- * UNDER_VERIFICATION -> CLOSED, asserting activity logs and notifications.
+ * End-to-end walk of the issue workflow through the real service stack (engine + domain events +
+ * JPA persistence) against PostgreSQL: REPORTED -> OPEN -> ASSIGNED -> IN_ANALYSIS -> IN_PROGRESS
+ * -> RESOLVED -> UNDER_VERIFICATION -> CLOSED, asserting activity logs and notifications.
  */
 @SpringBootTest
 class IssueLifecycleIT extends AbstractPostgresIT {
@@ -48,26 +47,62 @@ class IssueLifecycleIT extends AbstractPostgresIT {
     LocalDateTime now = LocalDateTime.now();
     String suffix = String.valueOf(System.nanoTime());
 
-    User owner = userRepository.save(User.builder().username("pm_" + suffix)
-        .email("pm_" + suffix + "@x.com").passwordHash("x")
-        .systemRole(UserRole.USER).createdAt(now).build());
-    User dev = userRepository.save(User.builder().username("dev_" + suffix)
-        .email("dev_" + suffix + "@x.com").passwordHash("x")
-        .systemRole(UserRole.USER).createdAt(now).build());
-    User tester = userRepository.save(User.builder().username("qa_" + suffix)
-        .email("qa_" + suffix + "@x.com").passwordHash("x")
-        .systemRole(UserRole.USER).createdAt(now).build());
+    User owner =
+        userRepository.save(
+            User.builder()
+                .username("pm_" + suffix)
+                .email("pm_" + suffix + "@x.com")
+                .passwordHash("x")
+                .systemRole(UserRole.USER)
+                .createdAt(now)
+                .build());
+    User dev =
+        userRepository.save(
+            User.builder()
+                .username("dev_" + suffix)
+                .email("dev_" + suffix + "@x.com")
+                .passwordHash("x")
+                .systemRole(UserRole.USER)
+                .createdAt(now)
+                .build());
+    User tester =
+        userRepository.save(
+            User.builder()
+                .username("qa_" + suffix)
+                .email("qa_" + suffix + "@x.com")
+                .passwordHash("x")
+                .systemRole(UserRole.USER)
+                .createdAt(now)
+                .build());
 
-    Project project = projectRepository.save(Project.builder()
-        .name("Lifecycle").owner(owner).createdAt(now).build());
-    projectMemberRepository.save(ProjectMember.builder()
-        .project(project).user(dev).projectRole(ProjectRole.DEVELOPER).addedAt(now).build());
-    projectMemberRepository.save(ProjectMember.builder()
-        .project(project).user(tester).projectRole(ProjectRole.TESTER).addedAt(now).build());
+    Project project =
+        projectRepository.save(
+            Project.builder().name("Lifecycle").owner(owner).createdAt(now).build());
+    projectMemberRepository.save(
+        ProjectMember.builder()
+            .project(project)
+            .user(dev)
+            .projectRole(ProjectRole.DEVELOPER)
+            .addedAt(now)
+            .build());
+    projectMemberRepository.save(
+        ProjectMember.builder()
+            .project(project)
+            .user(tester)
+            .projectRole(ProjectRole.TESTER)
+            .addedAt(now)
+            .build());
 
-    Issue created = issueService.createIssue(Issue.builder()
-        .project(project).title("Login bug").description("desc")
-        .type(IssueType.BUG).priority(IssuePriority.HIGH).build(), dev.getId());
+    Issue created =
+        issueService.createIssue(
+            Issue.builder()
+                .project(project)
+                .title("Login bug")
+                .description("desc")
+                .type(IssueType.BUG)
+                .priority(IssuePriority.HIGH)
+                .build(),
+            dev.getId());
     Long issueId = created.getId();
     assertEquals(IssueStatus.REPORTED, created.getStatus());
 
@@ -86,7 +121,8 @@ class IssueLifecycleIT extends AbstractPostgresIT {
     assertEquals(IssueStatus.CLOSED, reloaded.getStatus());
 
     // create + 6 status changes + 1 assignment = 8 activity-log entries
-    assertTrue(activityLogRepository.findPageFeedByIssueId(issueId).size() >= 7,
+    assertTrue(
+        activityLogRepository.findPageFeedByIssueId(issueId).size() >= 7,
         "expected an audit trail for the lifecycle");
 
     // domain events produced notifications (tester notified at RESOLVED, reporter at CLOSED, etc.)

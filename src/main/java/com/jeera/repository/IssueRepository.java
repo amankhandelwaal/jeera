@@ -2,16 +2,16 @@ package com.jeera.repository;
 
 import com.jeera.model.Issue;
 import com.jeera.model.enums.IssueStatus;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
-public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecificationExecutor<Issue> {
+public interface IssueRepository
+    extends JpaRepository<Issue, Long>, JpaSpecificationExecutor<Issue> {
 
   Optional<Issue> findByProjectIdAndIssueNumber(Long projectId, Integer issueNumber);
 
@@ -24,7 +24,8 @@ public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecific
   long countByProjectIdAndStatusNotIn(Long projectId, Collection<IssueStatus> statuses);
 
   @Modifying(clearAutomatically = true, flushAutomatically = true)
-  @Query("""
+  @Query(
+      """
       update Issue i
       set i.duplicateOf = null
       where i.project.id = :projectId
@@ -36,14 +37,16 @@ public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecific
 
   List<Issue> findByAssigneeIdAndStatusIn(Long assigneeId, Collection<IssueStatus> statuses);
 
-  @Query("""
+  @Query(
+      """
       select coalesce(max(i.issueNumber), 0)
       from Issue i
       where i.project.id = :projectId
       """)
   Integer findMaxIssueNumberByProjectId(Long projectId);
 
-  @Query("""
+  @Query(
+      """
       select i from Issue i
       join fetch i.project p
       join fetch i.reporter r
@@ -53,7 +56,8 @@ public interface IssueRepository extends JpaRepository<Issue, Long>, JpaSpecific
       """)
   List<Issue> findPageListByProjectId(Long projectId);
 
-  @Query("""
+  @Query(
+      """
       select i from Issue i
       join fetch i.project p
       join fetch i.reporter r

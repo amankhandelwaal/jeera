@@ -10,11 +10,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Proves the data-driven {@link DefaultWorkflowEngine} reproduces — for every
- * {@code (from, to, canManage)} combination, including the exact error messages
- * — the behaviour of the original hand-coded state machine that used to live in
- * {@code IssueService}. The legacy logic is duplicated here as the oracle; this
- * test must pass before the legacy methods are deleted.
+ * Proves the data-driven {@link DefaultWorkflowEngine} reproduces — for every {@code (from, to,
+ * canManage)} combination, including the exact error messages — the behaviour of the original
+ * hand-coded state machine that used to live in {@code IssueService}. The legacy logic is
+ * duplicated here as the oracle; this test must pass before the legacy methods are deleted.
  */
 class WorkflowEngineParityTest {
 
@@ -29,24 +28,42 @@ class WorkflowEngineParityTest {
       for (IssueStatus to : IssueStatus.values()) {
         for (boolean canManage : new boolean[] {true, false}) {
           Optional<String> expected = legacyValidate(from, to, canManage);
-          Optional<String> actual = captureError(
-              () -> engine.validateTransition(new TransitionContext(from, to, canManage)));
+          Optional<String> actual =
+              captureError(
+                  () -> engine.validateTransition(new TransitionContext(from, to, canManage)));
           if (!expected.equals(actual)) {
-            mismatches.add("validateTransition " + from + "->" + to + " canManage=" + canManage
-                + " expected=" + expected + " actual=" + actual);
+            mismatches.add(
+                "validateTransition "
+                    + from
+                    + "->"
+                    + to
+                    + " canManage="
+                    + canManage
+                    + " expected="
+                    + expected
+                    + " actual="
+                    + actual);
           }
         }
 
         Optional<String> expectedPath = legacyPath(from, to);
         Optional<String> actualPath = captureError(() -> engine.requireValidPath(from, to));
         if (!expectedPath.equals(actualPath)) {
-          mismatches.add("requireValidPath " + from + "->" + to
-              + " expected=" + expectedPath + " actual=" + actualPath);
+          mismatches.add(
+              "requireValidPath "
+                  + from
+                  + "->"
+                  + to
+                  + " expected="
+                  + expectedPath
+                  + " actual="
+                  + actualPath);
         }
       }
     }
 
-    assertTrue(mismatches.isEmpty(),
+    assertTrue(
+        mismatches.isEmpty(),
         "Engine diverged from legacy state machine:\n" + String.join("\n", mismatches));
   }
 
@@ -61,7 +78,8 @@ class WorkflowEngineParityTest {
 
   // --- legacy oracle: copied verbatim from the original IssueService methods ---
 
-  private static Optional<String> legacyValidate(IssueStatus oldStatus, IssueStatus newStatus, boolean canManage) {
+  private static Optional<String> legacyValidate(
+      IssueStatus oldStatus, IssueStatus newStatus, boolean canManage) {
     if (newStatus == IssueStatus.REJECTED && !canManage) {
       return Optional.of("Only PM/Admin can mark an issue as REJECTED");
     }
@@ -80,11 +98,14 @@ class WorkflowEngineParityTest {
       case REPORTED -> valid = (newStatus == IssueStatus.OPEN || newStatus == IssueStatus.REJECTED);
       case OPEN -> valid = (newStatus == IssueStatus.ASSIGNED || newStatus == IssueStatus.REJECTED);
       case ASSIGNED -> valid = (newStatus == IssueStatus.IN_ANALYSIS);
-      case IN_ANALYSIS -> valid = (newStatus == IssueStatus.IN_PROGRESS || newStatus == IssueStatus.MARK_REJECTED);
+      case IN_ANALYSIS ->
+          valid = (newStatus == IssueStatus.IN_PROGRESS || newStatus == IssueStatus.MARK_REJECTED);
       case IN_PROGRESS -> valid = (newStatus == IssueStatus.RESOLVED);
       case RESOLVED -> valid = (newStatus == IssueStatus.UNDER_VERIFICATION);
-      case UNDER_VERIFICATION -> valid = (newStatus == IssueStatus.CLOSED || newStatus == IssueStatus.OPEN);
-      case MARK_REJECTED -> valid = (newStatus == IssueStatus.OPEN || newStatus == IssueStatus.REJECTED);
+      case UNDER_VERIFICATION ->
+          valid = (newStatus == IssueStatus.CLOSED || newStatus == IssueStatus.OPEN);
+      case MARK_REJECTED ->
+          valid = (newStatus == IssueStatus.OPEN || newStatus == IssueStatus.REJECTED);
       case REJECTED -> valid = false;
       default -> valid = false;
     }

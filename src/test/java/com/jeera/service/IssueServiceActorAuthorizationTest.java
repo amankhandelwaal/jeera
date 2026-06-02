@@ -38,9 +38,9 @@ import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
 
 /**
- * Exercises {@link IssueService}'s authorization and side-effect behaviour using
- * mocked repositories but the <em>real</em> {@link DefaultWorkflowEngine}, so the
- * service-plus-engine wiring is tested together.
+ * Exercises {@link IssueService}'s authorization and side-effect behaviour using mocked
+ * repositories but the <em>real</em> {@link DefaultWorkflowEngine}, so the service-plus-engine
+ * wiring is tested together.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -52,7 +52,8 @@ class IssueServiceActorAuthorizationTest {
   @Mock private ActivityLogService activityLogService;
   @Mock private ApplicationEventPublisher eventPublisher;
 
-  private final WorkflowEngine workflowEngine = new DefaultWorkflowEngine(new DefaultWorkflowProvider());
+  private final WorkflowEngine workflowEngine =
+      new DefaultWorkflowEngine(new DefaultWorkflowProvider());
   private IssueService issueService;
 
   private User owner;
@@ -63,8 +64,14 @@ class IssueServiceActorAuthorizationTest {
 
   @BeforeEach
   void setUp() {
-    issueService = new IssueService(issueRepository, userRepository, projectMemberRepository,
-        activityLogService, workflowEngine, eventPublisher);
+    issueService =
+        new IssueService(
+            issueRepository,
+            userRepository,
+            projectMemberRepository,
+            activityLogService,
+            workflowEngine,
+            eventPublisher);
 
     owner = User.builder().id(1L).username("owner").systemRole(UserRole.USER).build();
     developer = User.builder().id(2L).username("dev").systemRole(UserRole.USER).build();
@@ -81,8 +88,14 @@ class IssueServiceActorAuthorizationTest {
 
   private Issue issue(IssueStatus status, User assignee) {
     return Issue.builder()
-        .id(100L).issueNumber(1).project(project).title("t")
-        .type(IssueType.BUG).priority(IssuePriority.MEDIUM).status(status).assignee(assignee)
+        .id(100L)
+        .issueNumber(1)
+        .project(project)
+        .title("t")
+        .type(IssueType.BUG)
+        .priority(IssuePriority.MEDIUM)
+        .status(status)
+        .assignee(assignee)
         .build();
   }
 
@@ -95,8 +108,10 @@ class IssueServiceActorAuthorizationTest {
   @Test
   void rejectingRequiresPmOrAdmin() {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.OPEN, null)));
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.updateIssueStatus(100L, IssueStatus.REJECTED, outsider.getId()));
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> issueService.updateIssueStatus(100L, IssueStatus.REJECTED, outsider.getId()));
     assertEquals("Only PM/Admin can mark an issue as REJECTED", ex.getMessage());
     verify(issueRepository, never()).save(any());
   }
@@ -124,8 +139,12 @@ class IssueServiceActorAuthorizationTest {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.RESOLVED, null)));
     when(projectMemberRepository.findByProjectIdAndUserId(10L, developer.getId()))
         .thenReturn(Optional.of(membership(ProjectRole.DEVELOPER, developer)));
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.updateIssueStatus(100L, IssueStatus.UNDER_VERIFICATION, developer.getId()));
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                issueService.updateIssueStatus(
+                    100L, IssueStatus.UNDER_VERIFICATION, developer.getId()));
     assertEquals("Only project testers can pick issues for verification", ex.getMessage());
   }
 
@@ -134,14 +153,16 @@ class IssueServiceActorAuthorizationTest {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.RESOLVED, null)));
     when(projectMemberRepository.findByProjectIdAndUserId(10L, tester.getId()))
         .thenReturn(Optional.of(membership(ProjectRole.TESTER, tester)));
-    Issue result = issueService.updateIssueStatus(100L, IssueStatus.UNDER_VERIFICATION, tester.getId());
+    Issue result =
+        issueService.updateIssueStatus(100L, IssueStatus.UNDER_VERIFICATION, tester.getId());
     assertEquals(IssueStatus.UNDER_VERIFICATION, result.getStatus());
     assertSame(tester, result.getAssignee());
   }
 
   @Test
   void reopenFromVerificationClearsAssignee() {
-    when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.UNDER_VERIFICATION, tester)));
+    when(issueRepository.findById(100L))
+        .thenReturn(Optional.of(issue(IssueStatus.UNDER_VERIFICATION, tester)));
     Issue result = issueService.updateIssueStatus(100L, IssueStatus.OPEN, owner.getId());
     assertEquals(IssueStatus.OPEN, result.getStatus());
     assertNull(result.getAssignee());
@@ -150,8 +171,10 @@ class IssueServiceActorAuthorizationTest {
   @Test
   void invalidTransitionIsRejected() {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.OPEN, null)));
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.updateIssueStatus(100L, IssueStatus.RESOLVED, owner.getId()));
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> issueService.updateIssueStatus(100L, IssueStatus.RESOLVED, owner.getId()));
     assertEquals("Invalid issue status transition: OPEN -> RESOLVED", ex.getMessage());
   }
 
@@ -160,9 +183,12 @@ class IssueServiceActorAuthorizationTest {
   @Test
   void assignDeveloper_rejectsNonMember() {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.OPEN, null)));
-    when(projectMemberRepository.findByProjectIdAndUserId(10L, developer.getId())).thenReturn(Optional.empty());
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.assignDeveloper(100L, developer.getId(), owner.getId()));
+    when(projectMemberRepository.findByProjectIdAndUserId(10L, developer.getId()))
+        .thenReturn(Optional.empty());
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> issueService.assignDeveloper(100L, developer.getId(), owner.getId()));
     assertEquals("Assignee must be a member of this project", ex.getMessage());
   }
 
@@ -171,8 +197,10 @@ class IssueServiceActorAuthorizationTest {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.OPEN, null)));
     when(projectMemberRepository.findByProjectIdAndUserId(10L, tester.getId()))
         .thenReturn(Optional.of(membership(ProjectRole.TESTER, tester)));
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.assignDeveloper(100L, tester.getId(), owner.getId()));
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> issueService.assignDeveloper(100L, tester.getId(), owner.getId()));
     assertEquals("Assignee must have DEVELOPER role in this project", ex.getMessage());
   }
 
@@ -183,8 +211,10 @@ class IssueServiceActorAuthorizationTest {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.OPEN, null)));
     when(projectMemberRepository.findByProjectIdAndUserId(10L, admin.getId()))
         .thenReturn(Optional.of(membership(ProjectRole.DEVELOPER, admin)));
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.assignDeveloper(100L, admin.getId(), owner.getId()));
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> issueService.assignDeveloper(100L, admin.getId(), owner.getId()));
     assertEquals("Admin users cannot be assigned to project issues", ex.getMessage());
   }
 
@@ -201,8 +231,10 @@ class IssueServiceActorAuthorizationTest {
   @Test
   void assignDeveloper_rejectsInvalidSourceState() {
     when(issueRepository.findById(100L)).thenReturn(Optional.of(issue(IssueStatus.REPORTED, null)));
-    IllegalStateException ex = assertThrows(IllegalStateException.class,
-        () -> issueService.assignDeveloper(100L, developer.getId(), owner.getId()));
+    IllegalStateException ex =
+        assertThrows(
+            IllegalStateException.class,
+            () -> issueService.assignDeveloper(100L, developer.getId(), owner.getId()));
     assertEquals("Invalid issue status transition: REPORTED -> ASSIGNED", ex.getMessage());
   }
 }

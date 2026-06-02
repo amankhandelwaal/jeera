@@ -4,16 +4,19 @@ import com.jeera.model.enums.IssuePriority;
 import com.jeera.model.enums.IssueStatus;
 import com.jeera.model.enums.IssueType;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.*;
 
 @Entity
-@Table(name = "issues", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_issue_project_issue_number", columnNames = { "project_id", "issue_number" })
-})
+@Table(
+    name = "issues",
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uk_issue_project_issue_number",
+          columnNames = {"project_id", "issue_number"})
+    })
 @Data
 @Builder
 @NoArgsConstructor

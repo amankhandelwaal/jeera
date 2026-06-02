@@ -36,7 +36,8 @@ public class IssueService {
   private final ApplicationEventPublisher eventPublisher;
 
   public Issue findById(Long issueId) {
-    return issueRepository.findPageDetailById(issueId)
+    return issueRepository
+        .findPageDetailById(issueId)
         .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
   }
 
@@ -45,14 +46,18 @@ public class IssueService {
   }
 
   public Issue createIssue(Issue newIssue, Long reporterId) {
-    User reporter = userRepository.findById(reporterId)
-        .orElseThrow(() -> new EntityNotFoundException("Reporter not found with id: " + reporterId));
+    User reporter =
+        userRepository
+            .findById(reporterId)
+            .orElseThrow(
+                () -> new EntityNotFoundException("Reporter not found with id: " + reporterId));
 
     if (newIssue.getProject() == null || newIssue.getProject().getId() == null) {
       throw new IllegalStateException("Project is required to create an issue");
     }
 
-    Integer currentMaxIssueNumber = issueRepository.findMaxIssueNumberByProjectId(newIssue.getProject().getId());
+    Integer currentMaxIssueNumber =
+        issueRepository.findMaxIssueNumberByProjectId(newIssue.getProject().getId());
     newIssue.setIssueNumber((currentMaxIssueNumber == null ? 0 : currentMaxIssueNumber) + 1);
 
     LocalDateTime now = LocalDateTime.now();
@@ -63,7 +68,8 @@ public class IssueService {
     newIssue.setClosedAt(null);
 
     Issue savedIssue = issueRepository.save(newIssue);
-    activityLogService.createActivityLog(savedIssue, reporter, "Issue created", null, IssueStatus.REPORTED.name());
+    activityLogService.createActivityLog(
+        savedIssue, reporter, "Issue created", null, IssueStatus.REPORTED.name());
 
     eventPublisher.publishEvent(new IssueCreatedEvent(savedIssue.getId()));
 
@@ -71,20 +77,30 @@ public class IssueService {
   }
 
   public Issue assignDeveloper(Long issueId, Long assigneeId, Long actorId) {
-    Issue issue = issueRepository.findById(issueId)
-        .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
-    User assignee = userRepository.findById(assigneeId)
-        .orElseThrow(() -> new EntityNotFoundException("Assignee not found with id: " + assigneeId));
-    User actor = userRepository.findById(actorId)
-        .orElseThrow(() -> new EntityNotFoundException("Actor not found with id: " + actorId));
+    Issue issue =
+        issueRepository
+            .findById(issueId)
+            .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
+    User assignee =
+        userRepository
+            .findById(assigneeId)
+            .orElseThrow(
+                () -> new EntityNotFoundException("Assignee not found with id: " + assigneeId));
+    User actor =
+        userRepository
+            .findById(actorId)
+            .orElseThrow(() -> new EntityNotFoundException("Actor not found with id: " + actorId));
 
     IssueStatus oldStatus = issue.getStatus();
     // Edge-only validation: assignment performs its own membership/role checks below
     // (the legacy code did not apply the PM/Admin manage gate here).
     workflowEngine.requireValidPath(oldStatus, IssueStatus.ASSIGNED);
 
-    ProjectMember membership = projectMemberRepository.findByProjectIdAndUserId(issue.getProject().getId(), assigneeId)
-        .orElseThrow(() -> new IllegalStateException("Assignee must be a member of this project"));
+    ProjectMember membership =
+        projectMemberRepository
+            .findByProjectIdAndUserId(issue.getProject().getId(), assigneeId)
+            .orElseThrow(
+                () -> new IllegalStateException("Assignee must be a member of this project"));
     if (membership.getProjectRole() != ProjectRole.DEVELOPER) {
       throw new IllegalStateException("Assignee must have DEVELOPER role in this project");
     }
@@ -106,13 +122,15 @@ public class IssueService {
         oldStatus.name(),
         IssueStatus.ASSIGNED.name());
 
-    eventPublisher.publishEvent(new IssueAssignedEvent(savedIssue.getId(), assignee.getId(), actor.getId()));
+    eventPublisher.publishEvent(
+        new IssueAssignedEvent(savedIssue.getId(), assignee.getId(), actor.getId()));
 
     return savedIssue;
   }
 
   public List<User> getAssignableDevelopers(Long projectId) {
-    return projectMemberRepository.findByProjectIdAndProjectRole(projectId, ProjectRole.DEVELOPER)
+    return projectMemberRepository
+        .findByProjectIdAndProjectRole(projectId, ProjectRole.DEVELOPER)
         .stream()
         .map(ProjectMember::getUser)
         .filter(user -> user.getSystemRole() != UserRole.ADMIN)
@@ -121,10 +139,14 @@ public class IssueService {
   }
 
   public Issue updateIssueStatus(Long issueId, IssueStatus newStatus, Long actorId) {
-    Issue issue = issueRepository.findById(issueId)
-        .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
-    User actor = userRepository.findById(actorId)
-        .orElseThrow(() -> new EntityNotFoundException("Actor not found with id: " + actorId));
+    Issue issue =
+        issueRepository
+            .findById(issueId)
+            .orElseThrow(() -> new EntityNotFoundException("Issue not found with id: " + issueId));
+    User actor =
+        userRepository
+            .findById(actorId)
+            .orElseThrow(() -> new EntityNotFoundException("Actor not found with id: " + actorId));
 
     IssueStatus oldStatus = issue.getStatus();
     boolean canManageIssue = canManageIssue(issue, actor);
@@ -144,9 +166,13 @@ public class IssueService {
     }
 
     if (newStatus == IssueStatus.UNDER_VERIFICATION) {
-      ProjectMember testerMembership = projectMemberRepository
-          .findByProjectIdAndUserId(issue.getProject().getId(), actor.getId())
-          .orElseThrow(() -> new IllegalStateException("Only project testers can pick issues for verification"));
+      ProjectMember testerMembership =
+          projectMemberRepository
+              .findByProjectIdAndUserId(issue.getProject().getId(), actor.getId())
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "Only project testers can pick issues for verification"));
       if (testerMembership.getProjectRole() != ProjectRole.TESTER) {
         throw new IllegalStateException("Only project testers can pick issues for verification");
       }
@@ -156,13 +182,10 @@ public class IssueService {
     Issue savedIssue = issueRepository.save(issue);
 
     activityLogService.createActivityLog(
-        savedIssue,
-        actor,
-        "Issue status changed",
-        oldStatus.name(),
-        newStatus.name());
+        savedIssue, actor, "Issue status changed", oldStatus.name(), newStatus.name());
 
-    eventPublisher.publishEvent(new IssueTransitionedEvent(savedIssue.getId(), oldStatus, newStatus, actor.getId()));
+    eventPublisher.publishEvent(
+        new IssueTransitionedEvent(savedIssue.getId(), oldStatus, newStatus, actor.getId()));
     return savedIssue;
   }
 
@@ -171,14 +194,17 @@ public class IssueService {
   }
 
   private boolean canManageIssue(Issue issue, User actor) {
-    boolean isProjectOwner = issue.getProject() != null
-        && issue.getProject().getOwner() != null
-        && issue.getProject().getOwner().getId().equals(actor.getId());
+    boolean isProjectOwner =
+        issue.getProject() != null
+            && issue.getProject().getOwner() != null
+            && issue.getProject().getOwner().getId().equals(actor.getId());
     boolean isAdmin = actor.getSystemRole() == UserRole.ADMIN;
     return isProjectOwner || isAdmin;
   }
 
   private boolean isTerminalStatus(IssueStatus status) {
-    return status == IssueStatus.CLOSED || status == IssueStatus.REJECTED || status == IssueStatus.MARK_REJECTED;
+    return status == IssueStatus.CLOSED
+        || status == IssueStatus.REJECTED
+        || status == IssueStatus.MARK_REJECTED;
   }
 }

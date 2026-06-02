@@ -51,34 +51,41 @@ class PermissionServiceTest {
   @Test
   void hasProjectRole_trueWhenMembershipRoleMatches() {
     when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L, UserRole.USER)));
-    when(projectRepository.findById(10L)).thenReturn(Optional.of(project(10L, user(2L, UserRole.USER))));
+    when(projectRepository.findById(10L))
+        .thenReturn(Optional.of(project(10L, user(2L, UserRole.USER))));
     when(projectMemberRepository.findByProjectIdAndUserId(10L, 1L))
-        .thenReturn(Optional.of(ProjectMember.builder().projectRole(ProjectRole.DEVELOPER).build()));
+        .thenReturn(
+            Optional.of(ProjectMember.builder().projectRole(ProjectRole.DEVELOPER).build()));
 
-    assertTrue(permissionService.hasProjectRole(1L, 10L, ProjectRole.DEVELOPER, ProjectRole.TESTER));
+    assertTrue(
+        permissionService.hasProjectRole(1L, 10L, ProjectRole.DEVELOPER, ProjectRole.TESTER));
     assertFalse(permissionService.hasProjectRole(1L, 10L, ProjectRole.TESTER));
   }
 
   @Test
   void hasProjectRole_throwsWhenUserMissing() {
     when(userRepository.findById(99L)).thenReturn(Optional.empty());
-    assertThrows(EntityNotFoundException.class,
+    assertThrows(
+        EntityNotFoundException.class,
         () -> permissionService.hasProjectRole(99L, 10L, ProjectRole.DEVELOPER));
   }
 
   @Test
   void hasProjectRole_throwsWhenMembershipMissing() {
     when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L, UserRole.USER)));
-    when(projectRepository.findById(10L)).thenReturn(Optional.of(project(10L, user(2L, UserRole.USER))));
+    when(projectRepository.findById(10L))
+        .thenReturn(Optional.of(project(10L, user(2L, UserRole.USER))));
     when(projectMemberRepository.findByProjectIdAndUserId(10L, 1L)).thenReturn(Optional.empty());
-    assertThrows(EntityNotFoundException.class,
+    assertThrows(
+        EntityNotFoundException.class,
         () -> permissionService.hasProjectRole(1L, 10L, ProjectRole.DEVELOPER));
   }
 
   @Test
   void canViewProject_adminAlwaysTrue() {
     when(userRepository.findById(1L)).thenReturn(Optional.of(user(1L, UserRole.ADMIN)));
-    when(projectRepository.findById(10L)).thenReturn(Optional.of(project(10L, user(2L, UserRole.USER))));
+    when(projectRepository.findById(10L))
+        .thenReturn(Optional.of(project(10L, user(2L, UserRole.USER))));
     assertTrue(permissionService.canViewProject(1L, 10L));
   }
 
@@ -93,7 +100,8 @@ class PermissionServiceTest {
   @Test
   void canViewProject_memberTrue() {
     when(userRepository.findById(3L)).thenReturn(Optional.of(user(3L, UserRole.USER)));
-    when(projectRepository.findById(10L)).thenReturn(Optional.of(project(10L, user(1L, UserRole.USER))));
+    when(projectRepository.findById(10L))
+        .thenReturn(Optional.of(project(10L, user(1L, UserRole.USER))));
     when(projectMemberRepository.existsByProjectIdAndUserId(10L, 3L)).thenReturn(true);
     assertTrue(permissionService.canViewProject(3L, 10L));
   }
@@ -101,7 +109,8 @@ class PermissionServiceTest {
   @Test
   void canViewProject_outsiderFalse() {
     when(userRepository.findById(3L)).thenReturn(Optional.of(user(3L, UserRole.USER)));
-    when(projectRepository.findById(10L)).thenReturn(Optional.of(project(10L, user(1L, UserRole.USER))));
+    when(projectRepository.findById(10L))
+        .thenReturn(Optional.of(project(10L, user(1L, UserRole.USER))));
     when(projectMemberRepository.existsByProjectIdAndUserId(10L, 3L)).thenReturn(false);
     assertFalse(permissionService.canViewProject(3L, 10L));
   }
