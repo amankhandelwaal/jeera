@@ -11,7 +11,7 @@ COPY src ./src
 RUN mvn -q clean package -DskipTests
 
 # Run Stage: Run the app
-FROM eclipse-temurin:17-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 # curl is needed by the container HEALTHCHECK below.
