@@ -38,7 +38,7 @@
 		<jacoco.version>0.8.13</jacoco.version>
 		<testcontainers.version>1.21.3</testcontainers.version>
 		<spotless.version>2.43.0</spotless.version>
-		<spotbugs.version>4.8.6.4</spotbugs.version>
+		<spotbugs.version>4.10.4.1</spotbugs.version>
 		<jacoco.min.coverage>0.10</jacoco.min.coverage>
 	</properties>
 	<dependencyManagement>
