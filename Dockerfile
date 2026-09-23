@@ -1,5 +1,5 @@
 # Build stage: package the app without relying on Maven Wrapper files.
-FROM maven:3.9.9-eclipse-temurin-17 AS build
+FROM maven:3.9.15-eclipse-temurin-26 AS build
 WORKDIR /app
 
 # Cache dependencies first for faster rebuilds.
